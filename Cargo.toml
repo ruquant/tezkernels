@@ -1,0 +1,7 @@
+[workspace]
+
+members = [
+    "output_kernel",
+    "debug_kernel",
+    "counter_kernel",
+]

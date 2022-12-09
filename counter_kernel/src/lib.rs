@@ -23,14 +23,15 @@
 /*                                                                           */
 /*****************************************************************************/
 
-use host::{
-    rollup_core::{ RawRollupCore, MAX_INPUT_MESSAGE_SIZE, MAX_INPUT_SLOT_DATA_CHUNK_SIZE },
-};
-use host::input::{ Input };
-use host::runtime::Runtime;
+use anyhow::{ensure, Result};
 use debug::debug_msg;
+use host::input::{Input, MessageData};
+use host::path::OwnedPath;
+use host::rollup_core::{RawRollupCore, MAX_INPUT_MESSAGE_SIZE, MAX_INPUT_SLOT_DATA_CHUNK_SIZE};
+use host::runtime::Runtime;
+use kernel::kernel_entry;
 /* Todo: use kernel_core atm */
-use kernel_core::inbox::{ InboxMessage, InternalInboxMessage, Transfer };
+use kernel_core::inbox::{InboxMessage, InternalInboxMessage, Transfer};
 use kernel_core::memory::Memory;
 
 const MAX_READ_INPUT_SIZE: usize = if MAX_INPUT_MESSAGE_SIZE > MAX_INPUT_SLOT_DATA_CHUNK_SIZE {
@@ -39,18 +40,19 @@ const MAX_READ_INPUT_SIZE: usize = if MAX_INPUT_MESSAGE_SIZE > MAX_INPUT_SLOT_DA
     MAX_INPUT_SLOT_DATA_CHUNK_SIZE
 };
 
-// Counter
+/// Counter
+#[derive(Debug)]
 pub struct Counter {
     val: i8,
 }
 
 impl Counter {
-    // Public read-only method: Returns the counter value
+    /// Public read-only method: Returns the counter value
     pub fn get_num(&self) -> i8 {
-        return self.val;
+        self.val
     }
 
-    // increment the counter
+    /// Increment the counter
     pub fn increment(&mut self) {
         self.val += 1;
     }
@@ -59,7 +61,7 @@ impl Counter {
         self.val -= 1;
     }
 
-    // reset to 0
+    /// Reset the counter to 0
     pub fn reset(&mut self) {
         self.val = 0;
     }
@@ -69,7 +71,7 @@ fn process_counter<'a, Host: RawRollupCore>(
     host: &mut Host,
     memory: &mut Memory,
     counter: &mut Counter,
-    payload: &'a [u8]
+    payload: &'a [u8],
 ) {
     /* parsing the Input message with the payload */
     let (_remaining, message) = InboxMessage::parse(payload).expect("Failed on parse payload");
@@ -85,37 +87,68 @@ fn process_counter<'a, Host: RawRollupCore>(
         }
 
         /* Internal message via contract call */
-        InboxMessage::Internal(message) => {
-            match message {
-                InternalInboxMessage::Transfer(Transfer { payload, .. }) => {
-                    debug_msg!(Host, "Received an internal message {:?}", payload);
+        InboxMessage::Internal(message) => match message {
+            InternalInboxMessage::Transfer(Transfer { payload, .. }) => {
+                debug_msg!(Host, "Received an internal message {:?}", payload);
 
-                    let incr_counter = counter.increment();
-                    debug_msg!(Host, "Counter {:#?}", incr_counter);
-                }
-                InternalInboxMessage::StartOfLevel => {
-                    debug_msg!(Host, "Start of level");
-                }
-                InternalInboxMessage::EndOfLevel => {
-                    debug_msg!(Host, "End of level");
-                }
+                counter.increment();
+                debug_msg!(Host, "Counter {:#?}", counter);
             }
-        }
+            InternalInboxMessage::StartOfLevel => {
+                debug_msg!(Host, "Start of level");
+            }
+            InternalInboxMessage::EndOfLevel => {
+                debug_msg!(Host, "End of level");
+            }
+        },
     }
 
     /* call memory snapshot */
     memory.snapshot(host);
 }
 
-pub fn counter_run<Host: RawRollupCore>(host: &mut Host, counter: &mut Counter) {
+pub fn handle_input_message<H: RawRollupCore>(
+    host: &mut H,
+    memory: &mut Memory,
+    message: MessageData,
+) -> Result<()> {
+    /* processing counter function  */
+    let path: OwnedPath = "/counter"
+        .as_bytes()
+        .to_vec()
+        .try_into()
+        .map_err(|e| anyhow::Error::msg(format!("{e:?}")))?;
+    let counter = match Runtime::store_read(host, &path, 0, 1) {
+        Ok(counter) => counter,
+        Err(_) => vec![0],
+    };
+    ensure!(counter.len() == 1, "counter is not a byte");
+    let mut counter = Counter {
+        val: i8::from_le_bytes(counter[..].try_into().unwrap()),
+    };
+
+    process_counter(host, memory, &mut counter, message.as_ref());
+    // We need to persist the effect in `counter`
+    Runtime::store_write(host, &path, &counter.val.to_le_bytes(), 0)
+        .map_err(|e| anyhow::Error::msg(format!("{e:?}")))?;
+    Ok(())
+}
+
+pub fn counter_run<Host: RawRollupCore>(host: &mut Host) {
     let mut memory = Memory::load_memory(host);
 
     /* Reading the input from host */
     match host.read_input(MAX_READ_INPUT_SIZE) {
         Ok(Some(Input::Message(message))) => {
-            debug_msg!(Host, "message data at level:{} - id:{}", message.level, message.id);
-            /* processing counter function  */
-            process_counter(host, &mut memory, counter, message.as_ref());
+            debug_msg!(
+                Host,
+                "message data at level:{} - id:{}",
+                message.level,
+                message.id
+            );
+            if let Err(_) = handle_input_message(host, &mut memory, message) {
+                // log and gracefully exit
+            }
         }
         Ok(Some(Input::Slot(_message))) => todo!("handle slot message"),
         Ok(None) => debug_msg!(Host, "no input"),
@@ -126,16 +159,4 @@ pub fn counter_run<Host: RawRollupCore>(host: &mut Host, counter: &mut Counter) 
     memory.snapshot(host)
 }
 
-// Set up our own kernel_entry
-#[macro_export]
-macro_rules! kernel_entry {
-    ($kernel_next:expr) => {
-    #[no_mangle]
-    pub extern "C" fn kernel_run() {
-    use host::rollup_core::{ RawRollupCore };
-    use host::wasm_host::WasmHost;
-    let mut host = unsafe { host::wasm_host::WasmHost::new() };
-    counter_run(host)
-}
-    };
-}
+kernel_entry!(counter_run);

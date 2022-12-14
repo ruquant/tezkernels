@@ -120,6 +120,8 @@ dependencies = [
  "host",
  "kernel",
  "kernel-core",
+ "mock_host",
+ "mock_runtime",
  "tezos_encoding",
 ]
 

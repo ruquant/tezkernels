@@ -22,20 +22,32 @@
 /* DEALINGS IN THE SOFTWARE.                                                 */
 /*                                                                           */
 /*****************************************************************************/
+#[macro_use]
 extern crate kernel;
 extern crate alloc;
 extern crate debug;
 extern crate kernel_core;
 
 use anyhow::{ ensure, Result };
+use host::{
+    input::{ Input, MessageData },
+    path::OwnedPath,
+    rollup_core::{
+        Input as InputType,
+        RawRollupCore,
+        MAX_INPUT_MESSAGE_SIZE,
+        MAX_INPUT_SLOT_DATA_CHUNK_SIZE,
+    },
+    runtime::Runtime,
+};
+use kernel_core::{
+    inbox::{ InboxMessage, InternalInboxMessage, Transfer },
+    memory::Memory,
+    tx_kernel::mock_kernel_run,
+};
+use mock_host::{ host_loop, HostInput };
+use mock_runtime::state::HostState;
 use debug::debug_msg;
-use host::input::{ Input, MessageData };
-use host::path::OwnedPath;
-use host::rollup_core::{ RawRollupCore, MAX_INPUT_MESSAGE_SIZE, MAX_INPUT_SLOT_DATA_CHUNK_SIZE };
-use host::runtime::Runtime;
-/* Todo: use kernel_core atm */
-use kernel_core::inbox::{ InboxMessage, InternalInboxMessage, Transfer };
-use kernel_core::memory::Memory;
 
 const MAX_READ_INPUT_SIZE: usize = if MAX_INPUT_MESSAGE_SIZE > MAX_INPUT_SLOT_DATA_CHUNK_SIZE {
     MAX_INPUT_MESSAGE_SIZE
@@ -44,12 +56,17 @@ const MAX_READ_INPUT_SIZE: usize = if MAX_INPUT_MESSAGE_SIZE > MAX_INPUT_SLOT_DA
 };
 
 /// Counter
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub struct Counter {
     val: i8,
 }
 
 impl Counter {
+    /// Create a new counter
+    pub fn new(val: i8) -> Self {
+        Self { val }
+    }
+
     /// Public read-only method: Returns the counter value
     pub fn get_num(&self) -> i8 {
         self.val
@@ -164,4 +181,61 @@ pub fn counter_run<Host: RawRollupCore>(host: &mut Host) {
 pub mod counter_kernel {
     use kernel::kernel_entry;
     kernel_entry!(counter_run);
+}
+
+#[test]
+fn test_counter() {
+    fn get_input_batch(level: i32) -> Vec<(InputType, Vec<u8>)> {
+        (1..level)
+            .map(|l| {
+                let input = if l % 2 == 0 {
+                    InputType::MessageData
+                } else {
+                    InputType::SlotDataChunk
+                };
+                // Start the counter at 0
+                let val = 0;
+                let counter = Counter::new(val);
+                let bytes = format!("counter at {:#?}", counter).into();
+                (input, bytes)
+            })
+            .collect()
+    }
+
+    // Prepare Host
+    let init = HostState::default();
+
+    let host_next = |level: i32| -> HostInput {
+        if level > 1 { HostInput::Exit } else { HostInput::NextLevel(1) }
+    };
+
+    let final_state = host_loop(init, mock_kernel_run, host_next, get_input_batch);
+
+    // Get storage of outputs
+    let mut outputs: Vec<_> = final_state.store
+        .as_ref()
+        .iter()
+        .filter(|(k, _)| k.starts_with("/output") && k.as_str() != "/output/id")
+        .collect();
+    outputs.sort();
+
+    // Get storage of inputs
+    let mut inputs: Vec<_> = final_state.store
+        .as_ref()
+        .iter()
+        .filter(|(k, _)| k.starts_with("/input") && k.contains("/payload"))
+        .collect();
+    inputs.sort();
+
+    // Assert inputs have been written to outputs
+    assert_eq!(
+        outputs
+            .iter()
+            .map(|(_, v)| v)
+            .collect::<Vec<_>>(),
+        inputs
+            .iter()
+            .map(|(_, v)| v)
+            .collect::<Vec<_>>()
+    );
 }

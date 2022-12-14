@@ -12,6 +12,9 @@ crate-type = ["cdylib", "rlib"]
 host = { git = "https://gitlab.com/tezos/kernel/" }
 debug = { git = "https://gitlab.com/tezos/kernel/" }
 kernel = {git = "https://gitlab.com/tezos/kernel/"}
+# mock mode
+mock_runtime = { git = "https://gitlab.com/tezos/kernel/" }
+mock_host = { git = "https://gitlab.com/tezos/kernel/" }
 
 # TODO use tx-kernel atm for memory and others
 kernel-core = { git = "https://gitlab.com/tezos/kernel/" }

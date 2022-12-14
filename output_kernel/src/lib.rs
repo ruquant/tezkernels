@@ -1,3 +1,6 @@
+#![allow(dead_code)]
+#![allow(unused_imports)]
+
 /*****************************************************************************/
 /*                                                                           */
 /* Open Source License                                                       */
@@ -23,10 +26,7 @@
 /*                                                                           */
 /*****************************************************************************/
 
-/* Use this kernel with test unit and using the mode mock_host only */
-
-#![allow(dead_code)]
-#![allow(unused_imports)]
+/// Use this kernel with test unit and using the mode mock_host only
 
 #[macro_use]
 extern crate kernel;
@@ -34,14 +34,16 @@ extern crate kernel;
 extern crate debug;
 extern crate alloc;
 
-use host::rollup_core::{
-    Input as InputType,
-    RawRollupCore,
-    MAX_INPUT_MESSAGE_SIZE,
-    MAX_INPUT_SLOT_DATA_CHUNK_SIZE,
+use host::{
+    input::{ Input, MessageData, SlotData },
+    rollup_core::{
+        Input as InputType,
+        RawRollupCore,
+        MAX_INPUT_MESSAGE_SIZE,
+        MAX_INPUT_SLOT_DATA_CHUNK_SIZE,
+    },
+    runtime::Runtime,
 };
-use host::input::{ Input, MessageData, SlotData };
-use host::runtime::Runtime;
 use mock_host::{ host_loop, HostInput };
 use mock_runtime::state::HostState;
 
@@ -52,10 +54,9 @@ const MAX_READ_INPUT_SIZE: usize = if MAX_INPUT_MESSAGE_SIZE > MAX_INPUT_SLOT_DA
     MAX_INPUT_SLOT_DATA_CHUNK_SIZE
 };
 
-/* Kernel: 
-    This kernel read input and write output to both the kernel output and log
-*/
-pub fn test_output_run<Host: RawRollupCore>(host: &mut Host) {
+/// This kernel read input and write output
+
+pub fn output_kernel<Host: RawRollupCore>(host: &mut Host) {
     match host.read_input(MAX_READ_INPUT_SIZE) {
         Ok(Some(Input::Slot(message @ SlotData { level, id, .. }))) => {
             debug_msg!(Host, "slot data at level:{} - id:{}", level, id);
@@ -63,15 +64,14 @@ pub fn test_output_run<Host: RawRollupCore>(host: &mut Host) {
         }
         Ok(Some(Input::Message(message @ MessageData { level, id, .. }))) => {
             debug_msg!(Host, "message data at level:{} - id:{}", level, id);
-
             host.write_output(message.as_ref()).unwrap();
         }
-        Ok(None) => debug_msg!(Host, "no input"),
+        Ok(None) => debug_msg!(Host, "no input received"),
         Err(_) => todo!("Handle errors later"),
     }
 }
 
-kernel_entry!(test_output_run);
+kernel_entry!(output_kernel);
 
 fn host_next(level: i32) -> HostInput {
     if level < 5 { HostInput::NextLevel(level) } else { HostInput::Exit }
@@ -92,7 +92,7 @@ fn test() {
     // Arrange
     let init = HostState::default();
 
-    // calling the kernel with mock mode
+    // calling the kernel
     let final_state = host_loop(init, mock_kernel_run, host_next, get_input_batch);
 
     // Assert inputs have been written to outputs

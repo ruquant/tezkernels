@@ -1,5 +1,5 @@
 [package]
-name = "counter-kernel"
+name = "test-counter-kernel"
 version = "0.1.0"
 edition = "2021"
 
@@ -14,6 +14,7 @@ debug = { git = "https://gitlab.com/tezos/kernel/" }
 kernel = {git = "https://gitlab.com/tezos/kernel/"}
 # TODO use tx-kernel atm for memory and others
 kernel-core = { git = "https://gitlab.com/tezos/kernel/" }
+counter-kernel = {path = "../counter_kernel"}
 
 # mock mode
 mock_runtime = { git = "https://gitlab.com/tezos/kernel/" }
@@ -21,9 +22,8 @@ mock_host = { git = "https://gitlab.com/tezos/kernel/" }
 
 anyhow = "1"
 
-[dev-dependencies]
 crypto = { git = "https://github.com/emturner/tezedge.git", branch = "master", default-features = false, features = ["no_sodium"] }
 tezos_encoding = { git = "https://github.com/emturner/tezedge.git", branch = "master" }
 
 [features]
-default = []
+testing = []

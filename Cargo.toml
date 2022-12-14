@@ -4,4 +4,5 @@ members = [
     "output_kernel",
     "debug_kernel",
     "counter_kernel",
+    "test_counter_kernel",
 ]

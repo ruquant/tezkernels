@@ -40,11 +40,7 @@ use host::{
     },
     runtime::Runtime,
 };
-use kernel_core::{
-    inbox::{ InboxMessage, InternalInboxMessage, Transfer },
-    memory::Memory,
-    tx_kernel::mock_kernel_run,
-};
+use kernel_core::{ inbox::{ InboxMessage, InternalInboxMessage, Transfer }, memory::Memory };
 use mock_host::{ host_loop, HostInput };
 use mock_runtime::state::HostState;
 use debug::debug_msg;
@@ -185,22 +181,19 @@ pub mod counter_kernel {
 
 #[test]
 fn test_counter() {
-    fn get_input_batch(level: i32) -> Vec<(InputType, Vec<u8>)> {
-        (1..level)
-            .map(|l| {
-                let input = if l % 2 == 0 {
-                    InputType::MessageData
-                } else {
-                    InputType::SlotDataChunk
-                };
-                // Start the counter at 0
-                let val = 0;
-                let counter = Counter::new(val);
-                let bytes = format!("counter at {:#?}", counter).into();
-                (input, bytes)
-            })
-            .collect()
-    }
+    kernel_entry!(counter_run);
+
+    let input_messages = |level: i32| -> Vec<(InputType, Vec<u8>)> {
+        // Start the counter at 0
+        let val = 0;
+        let counter = Counter::new(val);
+        let bytes = format!("counter at {:#?}", counter).into();
+        if level == 1 {
+            vec![(InputType::MessageData, bytes)]
+        } else {
+            vec![]
+        }
+    };
 
     // Prepare Host
     let init = HostState::default();
@@ -209,15 +202,22 @@ fn test_counter() {
         if level > 1 { HostInput::Exit } else { HostInput::NextLevel(1) }
     };
 
-    let final_state = host_loop(init, mock_kernel_run, host_next, get_input_batch);
+    let final_state = host_loop(init, mock_kernel_run, host_next, input_messages);
 
     // Get storage of outputs
-    let mut outputs: Vec<_> = final_state.store
+    /*let mut outputs: Vec<_> = final_state.store
         .as_ref()
         .iter()
         .filter(|(k, _)| k.starts_with("/output") && k.as_str() != "/output/id")
         .collect();
-    outputs.sort();
+    outputs.sort();*/
+    let outputs: Vec<_> = final_state.store
+        .as_ref()
+        .iter()
+        .filter(|(k, _)| k.starts_with("/output") && k.as_str() != "/output/id")
+        .collect();
+
+    assert_eq!(1, outputs.len(), "There should be a single outbox message");
 
     // Get storage of inputs
     let mut inputs: Vec<_> = final_state.store

@@ -5,6 +5,7 @@
 - `wasm-strip` is a part of the [WebAssembly Binary Toolkit](https://github.com/WebAssembly/wabt) to strip down the size of wasm kernel.
 
 ### Install Rust
+The rust version is `1.60.0`
 
 ```shell
 # [install rust]
@@ -15,10 +16,59 @@ chmod +x rustup-init.sh
 . $HOME/.cargo/env
 ```
 
-- Add wasm target:
+- Add `wasm32-unknown-unknown` target:
 
 ```shell
 rustup target add wasm32-unknown-unknown
+```
+## Kernels example available
+
+### Counter kernel
+This example showing how to storing (read/write) an `Int`.
+
+- Build
+```shell
+cargo make wasm-counter-kernel
+```
+This will export the wasm at the directory `[target/wasm32-unknown-unknown/release/counter_kernel.wasm]`
+
+- Strip the size of the export kernel
+```
+~wabt/bin/wasm-strip target/wasm32-unknown-unknown/release/counter_kernel.wasm
+```
+- Rust unit test
+```shell
+cargo test
+```
+### Debug kernel
+Debug kernel use the function `WasmHost::write_debug`, currently this function write the given number of bytes to debug log and return nothing. The purpose of this kernel showing that we need a return value to check the message that we write.
+
+- Build
+```shell
+cargo make wasm-debug-kernel
+```
+
+### Hello world kernel
+This example showing how to storing (read/write) a `String`.
+
+- Build
+```shell
+cargo make hello-world-kernel
+```
+
+TODO: xf fill-in
+
+### Output kernel
+This example showing how to use input/output message.
+
+- Build
+```shell
+cargo make wasm-output-kernel
+```
+
+- Rust unit test
+```shell
+cargo test
 ```
 
 ## Gitbook

@@ -1,7 +1,7 @@
 [workspace]
 
 members = [
-    "output_kernel",
-    "debug_kernel",
     "counter_kernel",
+    "debug_kernel",
+    "output_kernel",
 ]

@@ -16,17 +16,17 @@ args = ["fmt", "--", "--check"]
 [tasks.wasm-debug-kernel]
 workspace = false
 command = "cargo"
-args = ["build", "-p", "debug-kernel",  "--release", "--target", "wasm32-unknown-unknown", "--no-default-features", "--features=${@}"]
+args = ["build", "-p", "debug-kernel",  "--release", "--target", "wasm32-unknown-unknown"]
 
 [tasks.wasm-counter-kernel]
 workspace = false
 command = "cargo"
-args = ["build", "-p", "counter-kernel", "--release", "--target", "wasm32-unknown-unknown", "--no-default-features", "--features=${@}"]
+args = ["build", "-p", "counter-kernel", "--release", "--target", "wasm32-unknown-unknown"]
 
 [tasks.wasm-output-kernel]
 workspace = false
 command = "cargo"
-args = ["build", "-p", "output-kernel", "--features", "testing" ]
+args = ["build", "-p", "output-kernel", "--release", "--target", "wasm32-unknown-unknown"]
 
 [tasks.test]
 workspace = false

@@ -3,5 +3,10 @@
 members = [
     "counter_kernel",
     "debug_kernel",
+    "hello_kernel",
     "output_kernel",
 ]
+
+[profile.release]
+lto = true
+opt-level = 's'

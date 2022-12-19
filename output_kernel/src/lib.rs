@@ -28,21 +28,13 @@
 #![allow(dead_code)]
 #![allow(unused_imports)]
 
-#[macro_use]
-extern crate kernel;
-#[macro_use]
-extern crate debug;
-extern crate alloc;
-
+use debug::debug_msg;
+use host::input::{Input, MessageData, SlotData};
 use host::rollup_core::{
-    Input as InputType,
-    RawRollupCore,
-    MAX_INPUT_MESSAGE_SIZE,
-    MAX_INPUT_SLOT_DATA_CHUNK_SIZE,
+    Input as InputType, RawRollupCore, MAX_INPUT_MESSAGE_SIZE, MAX_INPUT_SLOT_DATA_CHUNK_SIZE,
 };
-use host::input::{ Input, MessageData, SlotData };
 use host::runtime::Runtime;
-use mock_host::{ host_loop, HostInput };
+use mock_host::{host_loop, HostInput};
 use mock_runtime::state::HostState;
 
 // host max read input size: 4096
@@ -52,7 +44,7 @@ const MAX_READ_INPUT_SIZE: usize = if MAX_INPUT_MESSAGE_SIZE > MAX_INPUT_SLOT_DA
     MAX_INPUT_SLOT_DATA_CHUNK_SIZE
 };
 
-/* Kernel: 
+/* Kernel:
     This kernel read input and write output to both the kernel output and log
 */
 pub fn test_output_run<Host: RawRollupCore>(host: &mut Host) {
@@ -71,53 +63,72 @@ pub fn test_output_run<Host: RawRollupCore>(host: &mut Host) {
     }
 }
 
-kernel_entry!(test_output_run);
+#[cfg(not(test))]
+mod entry {
+    use super::*;
+
+    use kernel::kernel_entry;
+
+    kernel_entry!(test_output_run);
+}
 
 fn host_next(level: i32) -> HostInput {
-    if level < 5 { HostInput::NextLevel(level) } else { HostInput::Exit }
+    if level < 5 {
+        HostInput::NextLevel(level)
+    } else {
+        HostInput::Exit
+    }
 }
 
 fn get_input_batch(level: i32) -> Vec<(InputType, Vec<u8>)> {
     (1..level)
         .map(|l| {
-            let input = if l % 2 == 0 { InputType::MessageData } else { InputType::SlotDataChunk };
+            let input = if l % 2 == 0 {
+                InputType::MessageData
+            } else {
+                InputType::SlotDataChunk
+            };
             let bytes = format!("message at {} value {}", level, l).into();
             (input, bytes)
         })
         .collect()
 }
 
-#[test]
-fn test() {
-    // Arrange
-    let init = HostState::default();
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use mock_host::host_loop;
+    use mock_runtime::state::HostState;
+    use wasm_bindgen_test::wasm_bindgen_test;
 
-    // calling the kernel with mock mode
-    let final_state = host_loop(init, mock_kernel_run, host_next, get_input_batch);
+    #[wasm_bindgen_test]
+    fn test() {
+        // Arrange
+        let init = HostState::default();
 
-    // Assert inputs have been written to outputs
-    let mut outputs: Vec<_> = final_state.store
-        .as_ref()
-        .iter()
-        .filter(|(k, _)| k.starts_with("/output") && k.as_str() != "/output/id")
-        .collect();
-    outputs.sort();
+        // calling the kernel with mock mode
+        let final_state = host_loop(init, test_output_run, host_next, get_input_batch);
 
-    let mut inputs: Vec<_> = final_state.store
-        .as_ref()
-        .iter()
-        .filter(|(k, _)| k.starts_with("/input") && k.contains("/payload"))
-        .collect();
-    inputs.sort();
-
-    assert_eq!(
-        outputs
+        // Assert inputs have been written to outputs
+        let mut outputs: Vec<_> = final_state
+            .store
+            .as_ref()
             .iter()
-            .map(|(_, v)| v)
-            .collect::<Vec<_>>(),
-        inputs
+            .filter(|(k, _)| k.starts_with("/output") && k.as_str() != "/output/id")
+            .collect();
+        outputs.sort();
+
+        let mut inputs: Vec<_> = final_state
+            .store
+            .as_ref()
             .iter()
-            .map(|(_, v)| v)
-            .collect::<Vec<_>>()
-    );
+            .filter(|(k, _)| k.starts_with("/input") && k.contains("/payload"))
+            .collect();
+        inputs.sort();
+
+        assert_eq!(
+            outputs.iter().map(|(_, v)| v).collect::<Vec<_>>(),
+            inputs.iter().map(|(_, v)| v).collect::<Vec<_>>()
+        );
+    }
 }

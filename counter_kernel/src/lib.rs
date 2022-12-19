@@ -23,15 +23,12 @@
 /*                                                                           */
 /*****************************************************************************/
 
-use anyhow::{ ensure, Result };
+use anyhow::{ensure, Result};
 use debug::debug_msg;
-use host::input::{ Input as InputType, MessageData };
-use host::rollup_core::{ Input };
+use host::input::{Input as InputType, MessageData};
 use host::path::OwnedPath;
-use host::rollup_core::{ RawRollupCore, MAX_INPUT_MESSAGE_SIZE, MAX_INPUT_SLOT_DATA_CHUNK_SIZE };
+use host::rollup_core::{RawRollupCore, MAX_INPUT_MESSAGE_SIZE, MAX_INPUT_SLOT_DATA_CHUNK_SIZE};
 use host::runtime::Runtime;
-use kernel::kernel_entry;
-use mock_runtime::host::MockHost;
 
 const MAX_READ_INPUT_SIZE: usize = if MAX_INPUT_MESSAGE_SIZE > MAX_INPUT_SLOT_DATA_CHUNK_SIZE {
     MAX_INPUT_MESSAGE_SIZE
@@ -96,9 +93,8 @@ pub fn handle_input_message<H: RawRollupCore>(host: &mut H, message: MessageData
     debug_msg!(H, "Counter {:#?}", counter);
 
     // We need to persist the effect in `counter`
-    Runtime::store_write(host, &path, &counter.val.to_le_bytes(), 0).map_err(|e|
-        anyhow::Error::msg(format!("{e:?}"))
-    )?;
+    Runtime::store_write(host, &path, &counter.val.to_le_bytes(), 0)
+        .map_err(|e| anyhow::Error::msg(format!("{e:?}")))?;
     Ok(())
 }
 
@@ -106,7 +102,12 @@ pub fn counter_run<Host: RawRollupCore>(host: &mut Host) {
     // Reading the input from host
     match host.read_input(MAX_READ_INPUT_SIZE) {
         Ok(Some(InputType::Message(message))) => {
-            debug_msg!(Host, "message data at level:{} - id:{}", message.level, message.id);
+            debug_msg!(
+                Host,
+                "message data at level:{} - id:{}",
+                message.level,
+                message.id
+            );
             if let Err(_) = handle_input_message(host, message) {
                 // log and gracefully exit
             }
@@ -117,27 +118,40 @@ pub fn counter_run<Host: RawRollupCore>(host: &mut Host) {
     }
 }
 
-#[cfg(feature = "counter-kernel")]
-pub mod counter_kernel {
+#[cfg(not(test))]
+pub mod entry {
+    use super::counter_run;
+
+    use kernel::kernel_entry;
+
     kernel_entry!(counter_run);
 }
 
-#[test]
-fn test() {
-    use mock_runtime::host::MockHost;
-    kernel_entry!(counter_run);
-    use crate::counter_run;
+#[cfg(test)]
+mod tests {
+    use host::rollup_core::Input;
+    use wasm_bindgen_test::wasm_bindgen_test;
 
-    // Arrange
-    let mut mock_runtime = MockHost::default();
-    let val = 0;
-    let counter = Counter::new(val);
-    let message = format!("counter {}", counter.get_num()).into();
+    use super::*;
 
-    let level = 10;
-    mock_runtime.as_mut().set_ready_for_input(level);
-    mock_runtime.as_mut().add_next_inputs(10, vec![(Input::MessageData, message)].iter());
+    #[wasm_bindgen_test]
+    fn test_with_mock() {
+        use crate::counter_run;
+        use mock_runtime::host::MockHost;
 
-    // Act
-    counter_run(&mut mock_runtime);
+        // Arrange
+        let mut mock_runtime = MockHost::default();
+        let val = 0;
+        let counter = Counter::new(val);
+        let message = format!("counter {}", counter.get_num()).into();
+
+        let level = 10;
+        mock_runtime.as_mut().set_ready_for_input(level);
+        mock_runtime
+            .as_mut()
+            .add_next_inputs(10, vec![(Input::MessageData, message)].iter());
+
+        // Act
+        counter_run(&mut mock_runtime);
+    }
 }

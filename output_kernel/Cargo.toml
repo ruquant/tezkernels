@@ -22,3 +22,6 @@ proptest = { version = "1.0", optional = true }
 [features]
 default = []
 testing = ["rand", "fake", "proptest" ]
+
+[dev-dependencies]
+wasm-bindgen-test = "0.3"

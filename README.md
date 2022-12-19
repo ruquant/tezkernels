@@ -23,6 +23,13 @@ chmod +x rustup-init.sh
 ```shell
 rustup target add wasm32-unknown-unknown
 ```
+
+- To run unit tests, install `wasm-bindgen-test`
+
+```shell
+cargo install wasm-bindgen-test
+```
+
 ## Kernels example available
 
 ### Counter kernel
@@ -50,16 +57,6 @@ Debug kernel use the function `WasmHost::write_debug`, currently this function w
 cargo make wasm-debug-kernel
 ```
 
-### Hello world kernel
-This example showing how to storing (read/write) a `String`.
-
-- Build
-```shell
-cargo make hello-world-kernel
-```
-
-TODO: xf fill-in
-
 ### Output kernel
 This example showing how to use input/output message.
 
@@ -71,6 +68,14 @@ cargo make wasm-output-kernel
 - Rust unit test
 ```shell
 cargo test
+```
+
+### Hello kernel
+This example shows how to use [Capn' Proto](https://capnproto.org) for safe and efficient message decoding
+on DAC/DAL input.
+- Build
+```
+cargo make wasm-hello-kernel
 ```
 
 ## `octez-wasm-repl` debug tool for kernel

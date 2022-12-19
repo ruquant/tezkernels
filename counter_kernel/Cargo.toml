@@ -6,7 +6,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [lib]
-crate-type = ["cdylib", "rlib"]
+crate-type = ["rlib"]
 
 [dependencies]
 host = { git = "https://gitlab.com/tezos/kernel/" }
@@ -20,5 +20,12 @@ tezos_encoding = { git = "https://github.com/emturner/tezedge.git", branch = "ma
 
 anyhow = "1"
 
+[dependencies.getrandom]
+version = "0.2"
+features = ["js"]
+
 [features]
 counter-kernel = []
+
+[dev-dependencies]
+wasm-bindgen-test = "0.3"

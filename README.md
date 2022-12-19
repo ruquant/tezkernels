@@ -1,5 +1,7 @@
 # Marigold kernel
 
+[[_TOC_]]
+
 ## Prerequired
 
 - `wasm-strip` is a part of the [WebAssembly Binary Toolkit](https://github.com/WebAssembly/wabt) to strip down the size of wasm kernel.

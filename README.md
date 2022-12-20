@@ -7,13 +7,16 @@
 - `wasm-strip` is a part of the [WebAssembly Binary Toolkit](https://github.com/WebAssembly/wabt) to strip down the size of wasm kernel.
 
 ### Install Rust
-The rust version is `1.60.0`
+
+The official website to install rust can be found at: <https://www.rust-lang.org/tools/install>.
+
+The rust version is `1.66.0`
 
 ```shell
 # [install rust]
 wget https://sh.rustup.rs/rustup-init.sh
 chmod +x rustup-init.sh
-./rustup-init.sh --profile minimal --default-toolchain 1.60.0 -y
+./rustup-init.sh --profile minimal --default-toolchain 1.66.0 -y
 # [source cargo]
 . $HOME/.cargo/env
 ```
@@ -28,6 +31,12 @@ rustup target add wasm32-unknown-unknown
 
 ```shell
 cargo install wasm-bindgen-test
+```
+
+- To run makefile, install [`cargo-make`](https://github.com/sagiegurari/cargo-make)
+  
+```shell
+cargo install --force cargo-make
 ```
 
 ## Kernels example available

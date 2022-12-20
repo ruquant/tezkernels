@@ -26,7 +26,7 @@
 #[cfg(feature = "write-debug")]
 #[no_mangle]
 pub unsafe extern "C" fn kernel_run() {
-    use host::rollup_core::{ RawRollupCore };
+    use host::rollup_core::RawRollupCore;
     use host::wasm_host::WasmHost;
 
     let msg = b"hello-world";

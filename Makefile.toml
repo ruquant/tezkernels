@@ -31,7 +31,7 @@ args = ["build", "-p", "output-kernel", "--release", "--target", "wasm32-unknown
 [tasks.wasm-hello-kernel]
 workspace = false
 command = "cargo"
-args = ["build", "-p", "output-kernel", "--release", "--target", "wasm32-unknown-unknown"]
+args = ["build", "-p", "hello-kernel", "--release", "--target", "wasm32-unknown-unknown"]
 
 [tasks.test]
 workspace = false

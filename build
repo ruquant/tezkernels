@@ -1,6 +1,6 @@
 cargo build --message-format json --release | \
     jq -r '
-        select(.reason == "compiler-artifact" and .target?.name? == "test-hello-world") |
+        select(.reason == "compiler-artifact" and .target?.name? == "hello-kernel") |
         .filenames |
         map(select(test(".wasm$"))) |
         flatten[]'

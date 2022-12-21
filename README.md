@@ -27,10 +27,10 @@ chmod +x rustup-init.sh
 rustup target add wasm32-unknown-unknown
 ```
 
-- To run unit tests, install `wasm-bindgen-test`
+- To run unit tests `wasm-bindgen-test`, install the test runner:
 
 ```shell
-cargo install wasm-bindgen-test
+cargo install -v 0.3.33 wasm-bindgen-cli
 ```
 
 - To run makefile, install [`cargo-make`](https://github.com/sagiegurari/cargo-make)
@@ -89,7 +89,7 @@ cargo make wasm-hello-kernel
 
 ## `octez-wasm-repl` debug tool for kernel
 
-As REPL (read-eval-print-loop) is an interactive environment, the `octez-wasm-repl` is the tool to evaluate the WASM PVM without running any Tezos node in the background. It has been designed for interact and test the kernel in a local environment. 
+As REPL (read-eval-print-loop) is an interactive environment, the `octez-wasm-repl` is the tool to evaluate the WASM PVM without running any Tezos node in the background. It has been designed for interact and test the kernel in a local environment.
 
 In the Pistachio-gitbook you can find the tutorial of:
 - [How to debug wasm kernels](https://marigold-proto.gitbook.io/proto-gitbook/smart-optimistic-rollup/how-to-mondaynet)

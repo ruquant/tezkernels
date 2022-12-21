@@ -84,24 +84,20 @@ then we can test all kernel together by running
 cargo test
 ```
 
-## `octez-wasm-repl` debug tool for kernel
+## Debug tool for kernel
 
 As REPL (read-eval-print-loop) is an interactive environment, the `octez-wasm-repl` is the tool to evaluate the WASM PVM without running any Tezos node in the background. It has been designed for interact and test the kernel in a local environment.
 
-In the Pistachio-gitbook you can find the tutorial of:
-- [How to debug wasm kernels](https://marigold-proto.gitbook.io/proto-gitbook/smart-optimistic-rollup/how-to-mondaynet)
+In the Pistachio-gitbook you can find the tutorial at [How to debug wasm kernels](doc/how-to-debug-kernels.md)
 
 ## Interact kernel with SORU
 
 Currently, the MondayNet test is one of the periodic Tezos testnets. More information can be found in <https://teztnets.xyz/mondaynet-about>
 
-In the Pistachio-gitbook, you can find the tutorials of:
-- [How to interact with Mondaynet](https://marigold-proto.gitbook.io/proto-gitbook/smart-optimistic-rollup/how-to-mondaynet)
-- [How to interact with SORU](https://marigold-proto.gitbook.io/proto-gitbook/smart-optimistic-rollup/how-to-mondaynet) 
+You can find more details at:
 
-## Pistachio-gitbook
-
-[Pistachio-gitbook](https://marigold-proto.gitbook.io/proto-gitbook/).
+- [How to interact with Mondaynet](doc/how-to-mondaynet.md)
+- [How to interact with SORU](doc/how-to-soru.md)
 
 ## Footnotes
 

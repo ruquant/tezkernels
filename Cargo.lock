@@ -372,6 +372,7 @@ dependencies = [
  "capnpc",
  "host",
  "kernel",
+ "mock_runtime",
 ]
 
 [[package]]

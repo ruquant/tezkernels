@@ -13,6 +13,7 @@ capnpc = "0.15"
 
 [dependencies]
 anyhow = "1"
-host = { git = "https://gitlab.com/tezos/kernel/", default-features = false}
+host = { git = "https://gitlab.com/tezos/kernel/" }
 kernel = {git = "https://gitlab.com/tezos/kernel/", default-features = false}
+mock_runtime = { git = "https://gitlab.com/tezos/kernel/" }
 capnp = "0.15"

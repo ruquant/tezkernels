@@ -7,13 +7,16 @@
 - `wasm-strip` is a part of the [WebAssembly Binary Toolkit](https://github.com/WebAssembly/wabt) to strip down the size of wasm kernel.
 
 ### Install Rust
-The rust version is `1.60.0`
+
+The official website to install rust can be found at: <https://www.rust-lang.org/tools/install>.
+
+The rust version is `1.66.0`
 
 ```shell
 # [install rust]
 wget https://sh.rustup.rs/rustup-init.sh
 chmod +x rustup-init.sh
-./rustup-init.sh --profile minimal --default-toolchain 1.60.0 -y
+./rustup-init.sh --profile minimal --default-toolchain 1.66.0 -y
 # [source cargo]
 . $HOME/.cargo/env
 ```
@@ -24,10 +27,16 @@ chmod +x rustup-init.sh
 rustup target add wasm32-unknown-unknown
 ```
 
-- To run unit tests, install `wasm-bindgen-test`
+- To run unit tests `wasm-bindgen-test`, install the test runner:
 
 ```shell
-cargo install wasm-bindgen-test
+cargo install -v 0.3.33 wasm-bindgen-cli
+```
+
+- To run makefile, install [`cargo-make`](https://github.com/sagiegurari/cargo-make)
+  
+```shell
+cargo install --force cargo-make
 ```
 
 ## Kernels example available
@@ -80,7 +89,7 @@ cargo make wasm-hello-kernel
 
 ## `octez-wasm-repl` debug tool for kernel
 
-As REPL (read-eval-print-loop) is an interactive environment, the `octez-wasm-repl` is the tool to evaluate the WASM PVM without running any Tezos node in the background. It has been designed for interact and test the kernel in a local environment. 
+As REPL (read-eval-print-loop) is an interactive environment, the `octez-wasm-repl` is the tool to evaluate the WASM PVM without running any Tezos node in the background. It has been designed for interact and test the kernel in a local environment.
 
 In the Pistachio-gitbook you can find the tutorial of:
 - [How to debug wasm kernels](https://marigold-proto.gitbook.io/proto-gitbook/smart-optimistic-rollup/how-to-mondaynet)

@@ -39,7 +39,7 @@ command = "cargo"
 args = ["test", "--features", "testing"]
 
 [tasks.doc]
-workspace = false 
+workspace = false
 command = "cargo"
 args = ["doc", "--features", "testing", "--no-deps", "--target-dir", "public"]
 

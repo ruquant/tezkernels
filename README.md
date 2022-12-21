@@ -1,16 +1,21 @@
-# Marigold kernel
+# Pistachio
 
 [[_TOC_]]
 
-## Prerequired
+Pistachio is an example project to show how to develop and use [Tezos SORU WASM kernel](http://tezos.gitlab.io/alpha/smart_rollups.html#developing-wasm-kernels). Currently we have 4 example kernels:
 
-- `wasm-strip` is a part of the [WebAssembly Binary Toolkit](https://github.com/WebAssembly/wabt) to strip down the size of wasm kernel.
+- **debug kernel**: shows how to use `WasmHost::write_debug` to write message to the debug log.
+- **output kernel**: shows how to use input/output message.
+- **hello kernel**: shows how to use [Capn' Proto](https://capnproto.org) for safe and efficient message decoding on DAC/DAL input.
+- **counter kernel**: shows how to storing (read/write) an `Int`.
 
-### Install Rust
+## Build
 
-The official website to install rust can be found at: <https://www.rust-lang.org/tools/install>.
+### Setup Rust
 
-The rust version is `1.66.0`
+The suggested [Rust](https://www.rust-lang.org/) version is `1.66.0`.
+
+You can install from scratch
 
 ```shell
 # [install rust]
@@ -21,70 +26,62 @@ chmod +x rustup-init.sh
 . $HOME/.cargo/env
 ```
 
-- Add `wasm32-unknown-unknown` target:
+or, you can use `rustup` instead,
+
+```shell
+rustup update 1.66.0
+rustup override set 1.66.0-<channel_full_name>
+rustup toolchain install 1.66.0
+```
+
+More details of install Rust can be found at: https://www.rust-lang.org/tools/install.
+
+### Setup WASM
+
+We need to add `wasm32-unknown-unknown` to be a possible target of Rust:
 
 ```shell
 rustup target add wasm32-unknown-unknown
 ```
 
-- To run unit tests `wasm-bindgen-test`, install the test runner:
+### Build kernel to WASM with Cargo
+
+We provide pre-defined tasks for building kernels, that requires [`cargo-make`](https://github.com/sagiegurari/cargo-make):
+
+```shell
+cargo install cargo-make
+```
+
+After install `cargo-make` we can now build our kernel! Remember to replace `<name>` by one of `debug`, `output`, `hello` or `counter`.
+
+```shell
+cargo make wasm-<name>-kernel
+```
+
+This will export the wasm file at the directory `target/wasm32-unknown-unknown/release/<name>_kernel.wasm`.
+
+### Strip the generated WASM
+
+The size of generated wasm file might be large, but [WebAssembly Binary Toolkit (wabt)](https://github.com/WebAssembly/wabt) provides a tool, `wasm-strip`, to strip down the size of our wasm kernel.
+
+Notice that, you need to make sure you have installed `wabt` with your system package manager; and, `wasm-strip` will directly edit the wasm file, so you might want to backup your wasm file.
+
+```shell
+wasm-strip target/wasm32-unknown-unknown/release/<name>_kernel.wasm
+```
+
+## Unit Test
+
+We use [`wasm-bindgen-test`](https://rustwasm.github.io/wasm-bindgen/wasm-bindgen-test/usage.html) to unit test our kernels. To use `wasm-bindgen-test` with Cargo however, you need to install `wasm-bindgen-cli` that will provide you the required test runner.
 
 ```shell
 cargo install wasm-bindgen-cli
 ```
 
-- To run makefile, install [`cargo-make`](https://github.com/sagiegurari/cargo-make)
-  
-```shell
-cargo install --force cargo-make
-```
+then we can test all kernel together by running
 
-## Kernels example available
-
-### Counter kernel
-This example showing how to storing (read/write) an `Int`.
-
-- Build
-```shell
-cargo make wasm-counter-kernel
-```
-This will export the wasm at the directory `[target/wasm32-unknown-unknown/release/counter_kernel.wasm]`
-
-- Strip the size of the export kernel
-```
-~wabt/bin/wasm-strip target/wasm32-unknown-unknown/release/counter_kernel.wasm
-```
-- Rust unit test
 ```shell
 cargo test
-```
-### Debug kernel
-Debug kernel use the function `WasmHost::write_debug`, currently this function write the given number of bytes to debug log and return nothing. The purpose of this kernel showing that we need a return value to check the message that we write.
-
-- Build
-```shell
-cargo make wasm-debug-kernel
-```
-
-### Output kernel
-This example showing how to use input/output message.
-
-- Build
-```shell
-cargo make wasm-output-kernel
-```
-
-- Rust unit test
-```shell
-cargo test
-```
-
-### Hello kernel
-This example shows how to use [Capn' Proto](https://capnproto.org) for safe and efficient message decoding
-on DAC/DAL input.
-- Build
-```
-cargo make wasm-hello-kernel
 ```
 
 ## `octez-wasm-repl` debug tool for kernel
@@ -106,6 +103,6 @@ In the Pistachio-gitbook, you can find the tutorials of:
 
 [Pistachio-gitbook](https://marigold-proto.gitbook.io/proto-gitbook/).
 
-# Footnotes
+## Footnotes
 
 The logo of this project is the [Pistachio icons created by Freepik - Flaticon](https://www.flaticon.com/free-icons/pistachio).

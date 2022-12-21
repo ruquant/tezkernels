@@ -30,7 +30,7 @@ rustup target add wasm32-unknown-unknown
 - To run unit tests `wasm-bindgen-test`, install the test runner:
 
 ```shell
-cargo install -v 0.3.33 wasm-bindgen-cli
+cargo install wasm-bindgen-cli
 ```
 
 - To run makefile, install [`cargo-make`](https://github.com/sagiegurari/cargo-make)

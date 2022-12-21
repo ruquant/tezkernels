@@ -44,6 +44,10 @@ We need to add `wasm32-unknown-unknown` to be a possible target of Rust:
 rustup target add wasm32-unknown-unknown
 ```
 
+### Install Cap'n Proto
+
+The `Cap'n proto` tools is required by the example `hello-kernel`. Please read https://capnproto.org/install.html to install it to your system.
+
 ### Build kernel to WASM with Cargo
 
 We provide pre-defined tasks for building kernels, that requires [`cargo-make`](https://github.com/sagiegurari/cargo-make):

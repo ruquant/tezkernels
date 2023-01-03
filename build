@@ -1,6 +1,30 @@
-cargo build --message-format json --release | \
+#!/usr/bin/env bash
+read WASM <<<$(
+    cargo build --message-format json --release |
     jq -r '
         select(.reason == "compiler-artifact" and .target?.name? == "hello-kernel") |
         .filenames |
         map(select(test(".wasm$"))) |
-        flatten[]'
+        flatten[]')
+OUT=`mktemp -d kernel-XXXX`
+wasm-strip -o /dev/stdout $WASM | split -db4093 - $OUT/kernel-
+readarray -t fs < <(ls $OUT/kernel-* | sort)
+nr="${#fs}"
+for i in "${!fs[@]}"
+do
+    if [[ $i = $nr ]]
+    then
+        printf '\x01\x01' | cat - "${fs[$i]}" | xxd -ps -c 0 -
+    else
+        printf '\x01\x00' | cat - "${fs[$i]}" | xxd -ps -c 0 -
+    fi
+done >messages
+rm -rf $OUT
+read WASM <<<$(
+    cargo build --message-format json --release |
+    jq -r '
+        select(.reason == "compiler-artifact" and .target?.name? == "l1-installer") |
+        .filenames |
+        map(select(test(".wasm$"))) |
+        flatten[]')
+wasm-strip -o /dev/stdout $WASM | xxd -ps -c 0 - >installer.hex

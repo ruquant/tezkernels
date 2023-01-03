@@ -5,12 +5,12 @@ In this document, follow the same format of question and answer will express on 
   
   Create a SORU by using the `octez-client` from Tezos layer-1, the result of it is a SORU address with prefix `scr1`.
   ```shell
-  ./octez-client originate sc rollup \
+  ./octez-client originate smart rollup \
       from ${OPERATOR_ADDR} \
       of kind wasm_2_0_0 \
       of type bytes \
-      booting with "${KERNEL}" \
-      -burn-cap 999
+      with kernel "${KERNEL}" \
+      --burn-cap 999
   ```
   where:
     - `${OPERATOR_ADDR}` is a valid implicit account on MondayNet.

@@ -1,5 +1,5 @@
 [package]
-name = "hello-kernel"
+name = "l1-installer"
 version = "0.1.0"
 edition = "2021"
 
@@ -8,15 +8,16 @@ edition = "2021"
 [lib]
 crate-type = ["cdylib", "rlib"]
 
-[build-dependencies]
-capnpc = "0.15"
-
 [dependencies]
-anyhow = "1"
 host = { git = "https://gitlab.com/tezos/kernel/" }
+debug = { git = "https://gitlab.com/tezos/kernel/" }
 kernel = {git = "https://gitlab.com/tezos/kernel/"}
-kernel-core = {git = "https://gitlab.com/tezos/kernel/", default-features = false}
-capnp = "0.15"
+kernel-core = {git = "https://gitlab.com/tezos/kernel/", default-features = false }
+tezos_encoding = { git = "https://github.com/emturner/tezedge.git", branch = "master" }
+
+[dependencies.getrandom]
+version = "0.2"
+features = ["js"]
 
 [dev-dependencies]
 mock_runtime = { git = "https://gitlab.com/tezos/kernel/" }

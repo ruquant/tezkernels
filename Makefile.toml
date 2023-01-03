@@ -33,6 +33,11 @@ workspace = false
 command = "cargo"
 args = ["build", "-p", "hello-kernel", "--release", "--target", "wasm32-unknown-unknown"]
 
+[tasks.l1-installer]
+workspace = false
+command = "cargo"
+args = ["build", "-p", "l1-installer", "--release", "--target", "wasm32-unknown-unknown"]
+
 [tasks.test]
 workspace = false
 command = "cargo"

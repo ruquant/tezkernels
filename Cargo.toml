@@ -5,8 +5,9 @@ members = [
     "debug_kernel",
     "hello_kernel",
     "output_kernel",
+    "l1_installer",
 ]
 
 [profile.release]
 lto = true
-opt-level = 's'
+opt-level = 'z'

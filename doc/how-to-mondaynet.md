@@ -7,7 +7,7 @@
   - [https://status.teztnets.xyz/](https://status.teztnets.xyz/)
   - [https://explorus.functori.com/scoru](https://explorus.functori.com/scoru)
 
-- What are wallets support MondayNet?
+- Which wallet supports MondayNet?
   - Temple wallet
 
 - How to **setup** MondayNet?

@@ -1,11 +1,10 @@
 # How to interact with SORU?
-In this document, follow the same format of question and answer will express on "How to?" interact with SORU.
   
 - How to **create/originate** a SORU?
   
   Create a SORU by using the `octez-client` from Tezos layer-1, the result of it is a SORU address with prefix `scr1`.
   ```shell
-  ./octez-client originate sc rollup \
+  ./octez-client originate smart rollup \
       from ${OPERATOR_ADDR} \
       of kind wasm_2_0_0 \
       of type bytes \
@@ -14,7 +13,7 @@ In this document, follow the same format of question and answer will express on 
   ```
   where:
     - `${OPERATOR_ADDR}` is a valid implicit account on MondayNet.
-    - `"${KERNEL}"`: is a string of hex representation of a WebAssembly bytecode serving as an initial program to boot on. 
+    - `"${KERNEL}"`: is a string of hex representation of a WebAssembly bytecode serving as an initial program to boot on.
 - How to generate the **`"${KERNEL}"`**?
   
   From a WASM bytecode file, for example name `kernel.wasm`, using the following command to generate its hex representation:

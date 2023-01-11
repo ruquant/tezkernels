@@ -12,69 +12,25 @@
 
 - How to **setup** MondayNet?
   
-  There are several approach:
-  - From Tezos source code:
+  - From Tezos source code: Please follow the tutorial on https://teztnets.xyz/mondaynet-about. Note that, the parameters of branch checkout and the network is changing because the branch restarts each Monday.
     
-    Download and compile the source code as following:
+    For instance: Download and compile the source code as following:
     ```shell
         cd tezos
-        git checkout 8b50837b
+        # the branch c49508dc will change in the future
+        git checkout c49508dc 
         eval $(opam env)
         make build-dev-deps
         make
     ```
-  - Flextesa:
-    
-    For Flextesa there is a "hack" version can be found at <https://github.com/lykimq/flextesa_mondaynet> that support the MondayNet. **Use at your own risk.**
-  - Bakingsetup:
-  
-    This is a tool that contents scripts can be used to start and stop Tezos nodes and bakers that also support MondayNet. **Use at your own risk.**
-
-    ```shell
-    git clone https://github.com/drchrispinnock/bakingsetup
-    ```
-
-    Edit `/etc/hostname`, add at the beginning `mondaynet`.
-
-    Setup mondaynet:
-    ```shell
-    cd mondaynet
-    chmod 777 mondaynet-setup.sh
-    ./mondaynet-setup.sh
-    ```
 
 - How to **config** `octez-node` on MondayNet?
   
-  - From Tezos source code
     ```shell
       # config octez-node with the mondaynet network
-      ./octez-node config init --network https://teztnets.xyz/mondaynet-2022-12-05
+      # the network: https://teztnets.xyz/mondaynet-2023-01-09 will change in the future
+      ./octez-node config init https://teztnets.xyz/mondaynet-2023-01-09
     ```
-
-  - Flexetesa:
-    - Create alias for `docker exec` as follows:
-        ```shell
-        # alias for octez-client
-        alias oct_cli='docker exec alphabox octez-client'
-        # alias for octez-node
-        alias oct_node='docker exec alphabox octez-node'
-        # alias for octez-sc-rollup-client-alpha
-        alias sc_cli='docker exec alphabox octez-sc-rollup-client-alpha'
-        # alias for octez-sc-rollup-node-alpha
-        alias sc_node='docker exec alphabox octez-sc-rollup-node-alpha'
-        ```
-    - Config 
-        ```shell
-        oct_node config init --network https://teztnets.xyz/mondaynet-2022-12-05
-        ```
-   - Bakingsetup
-    
-      The bakingsetup will config and run the `octez-node`:
-      ```shell
-        cd mondaynet
-        chmod 777 mondaynet-start.sh
-        ./mondaynet-start.sh
-      ```
 - How to **run** `octez-node`?  
   - From Tezos source code
     ```shell
@@ -88,8 +44,6 @@
     ```shell
     kill -9 <id>
     ```
-   - The flextesa is similar as the one from Tezos source code.
-   - The bakingsetup will start running the `octez-node` after using `./mondaynet-start.sh`.
 
 - How to **add account** on MondayNet?
 
@@ -103,7 +57,7 @@
 
 - How to add **faucet** to the account?
   
-   The faucet for MondayNet can be found at <https://faucet.mondaynet-2022-12-05.teztnets.xyz>
+   The faucet for MondayNet can be found at https://teztnets.xyz/mondaynet-about.
 
    For instance, `alice` has an account: `tz1NCwYf8HF1V2nft3w657uwNQZPyMHA1xEM`. To add the faucet for `alice`, copy her address to the box in the section `Or fund any address` and request `6001tz` for her.
 

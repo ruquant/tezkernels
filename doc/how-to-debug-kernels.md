@@ -61,15 +61,15 @@
   Where the input is either: external or internal.
 
   - External:
-    
+
     It is a hex representation of the payload.
   - Internal:
-    - Internal transfers: 
+    - Internal transfers:
       - payload: Michelson data (`Pair Unit False` or `0` in the example above)
-      - sender: the contract hash of the originated contract for the rollup 
+      - sender: the contract hash of the originated contract for the rollup
       - source: the implicit acccount sending the message
-      - destination: the smart rollup address 
-      
+      - destination: the smart rollup address
+
       If the `sender, source, destination` are not given, it will be taken from the default addresses.
 
 - How to **use commands** in `octez-wasm-alpha-repl`?

@@ -47,7 +47,7 @@ args = ["doc", "--features", "testing", "--no-deps", "--target-dir", "public"]
 workspace = false
 dependencies = [
     "clean",
-    "fmt",
+    "fmt", # FIXME: do we need both fmt and fmt-check here?
     "fmt-check",
     "wasm-debug-kernel",
     "wasm-counter-kernel",

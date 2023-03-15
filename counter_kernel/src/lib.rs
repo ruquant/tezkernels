@@ -19,15 +19,15 @@ fn execute<Host: RawRollupCore>(host: &mut Host, counter: Counter) -> Counter {
         Err(_) | Ok(None) => counter,
         Ok(Some(message)) => {
             // If there is a message let's process it.
-            debug_msg!(Host,"Hello message\n");
+            debug_msg!(Host, "Hello message\n");
             let data = message.as_ref();
             match data {
                 [0x00, ..] => {
-                    debug_msg!(Host,"Message from the kernel.\n");
+                    debug_msg!(Host, "Message from the kernel.\n");
                     execute(host, counter)
                 }
                 [0x01, ..] => {
-                    debug_msg!(Host,"Message from the user.\n");
+                    debug_msg!(Host, "Message from the user.\n");
                     // Let's skip the first byte of the data to get what the user has sent.
                     let user_message: Vec<&u8> = data.iter().skip(1).collect();
                     // We are parsing the message from the user.
@@ -48,20 +48,22 @@ fn execute<Host: RawRollupCore>(host: &mut Host, counter: Counter) -> Counter {
                 // If these cases are well-defined, can the SDK return an enum instead
                 // of the raw bytes?
                 // E.g. `enum Message { Kernel(Vec<u8>), User(Vec<u8>) }`
-                execute(host, counter),
+                {
+                    execute(host, counter)
+                }
             }
         }
     }
 }
 
-fn entry< Host: RawRollupCore>(host: &mut Host) {
+fn entry<Host: RawRollupCore>(host: &mut Host) {
     let counter_path: OwnedPath = "/counter".as_bytes().to_vec().try_into().unwrap();
     let counter = Runtime::store_read(host, &counter_path, 0, 8)
         .map_err(|_| "Runtime error".to_string())
         .and_then(Counter::try_from)
         .unwrap_or_default();
 
-    debug_msg!(Host,"Hello kernel\n");
+    debug_msg!(Host, "Hello kernel\n");
     let counter = execute(host, counter);
 
     let counter: [u8; 8] = counter.into();

@@ -1,14 +1,12 @@
 // src/counter.rs
 
 pub struct Counter {
-    counter: i64
+    counter: i64,
 }
 
 impl Default for Counter {
     fn default() -> Counter {
-        Counter {
-            counter: 0
-        }
+        Counter { counter: 0 }
     }
 }
 
@@ -25,7 +23,6 @@ impl Counter {
         }
     }
 }
-
 
 impl TryFrom<Vec<u8>> for Counter {
     type Error = String;
@@ -48,7 +45,7 @@ impl Into<[u8; 8]> for Counter {
 pub enum UserAction {
     Increment,
     Decrement,
-    Reset
+    Reset,
 }
 
 pub fn transition(counter: Counter, action: UserAction) -> Counter {
@@ -58,7 +55,6 @@ pub fn transition(counter: Counter, action: UserAction) -> Counter {
         UserAction::Reset => Counter::default(),
     }
 }
-
 
 impl TryFrom<Vec<&u8>> for UserAction {
     type Error = String;
@@ -72,4 +68,3 @@ impl TryFrom<Vec<&u8>> for UserAction {
         }
     }
 }
-

@@ -30,6 +30,7 @@
           wabt
           clang
           tezos.packages.${system}.octez-smart-rollup-wasm-debugger
+          cargo-make
 
           (rust-bin.stable."1.66.0".default.override {
             targets = ["wasm32-unknown-unknown"];

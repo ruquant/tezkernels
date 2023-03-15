@@ -3,29 +3,13 @@ name = "counter-kernel"
 version = "0.1.0"
 edition = "2021"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [lib]
-crate-type = ["cdylib", "rlib"]
+crate-type = ["cdylib", "lib"]
 
 [dependencies]
-host = { git = "https://gitlab.com/tezos/kernel/" }
+# Let's use the last version of the SDK, todo: fix the version if it's an issue
+host = { git = "https://gitlab.com/tezos/kernel/" } 
 debug = { git = "https://gitlab.com/tezos/kernel/" }
 kernel = {git = "https://gitlab.com/tezos/kernel/"}
-
 mock_runtime = { git = "https://gitlab.com/tezos/kernel/" }
 mock_host = { git = "https://gitlab.com/tezos/kernel/" }
-
-tezos_encoding = { git = "https://github.com/emturner/tezedge.git", branch = "master" }
-
-anyhow = "1"
-
-[dependencies.getrandom]
-version = "0.2"
-features = ["js"]
-
-[features]
-counter-kernel = []
-
-[dev-dependencies]
-wasm-bindgen-test = "0.3.33"

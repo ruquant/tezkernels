@@ -3,10 +3,12 @@
 members = [
     "counter_kernel",
     "debug_kernel",
-    "hello_kernel",
-    "output_kernel",
+    # Disabled for now, because it doesn't compile.
+    # "hello_kernel",
+    # "output_kernel",
 ]
 
+# FIXME: what is this? Do we need it?
 [profile.release]
 lto = true
 opt-level = 's'

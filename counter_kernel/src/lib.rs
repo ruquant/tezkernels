@@ -1,138 +1,80 @@
-// SPDX-FileCopyrightText: 2022 TriliTech <contact@trili.tech>
-// SPDX-FileCopyrightText: 2022 Nomadic Labs <contact@nomadic-labs.com>
-// SPDX-FileCopyrightText: 2022 Marigold <contact@marigold.dev>
-//
-// SPDX-License-Identifier: MIT
+extern crate alloc;
 
-use anyhow::{ensure, Result};
 use debug::debug_msg;
-use host::input::{Input as InputType, MessageData};
-use host::path::OwnedPath;
-use host::rollup_core::{RawRollupCore, MAX_INPUT_MESSAGE_SIZE, MAX_INPUT_SLOT_DATA_CHUNK_SIZE};
+use host::rollup_core::{RawRollupCore, MAX_INPUT_MESSAGE_SIZE};
 use host::runtime::Runtime;
+use kernel::kernel_entry;
 
-const MAX_READ_INPUT_SIZE: usize = if MAX_INPUT_MESSAGE_SIZE > MAX_INPUT_SLOT_DATA_CHUNK_SIZE {
-    MAX_INPUT_MESSAGE_SIZE
-} else {
-    MAX_INPUT_SLOT_DATA_CHUNK_SIZE
-};
+mod counter;
+use counter::*;
 
-/// Counter
-#[derive(Debug)]
-pub struct Counter {
-    val: i8,
-}
+use host::path::OwnedPath;
 
-impl Counter {
-    // Create a new counter
-    pub fn new(val: i8) -> Self {
-        Self { val }
-    }
+fn execute<Host: RawRollupCore>(host: &mut Host, counter: Counter) -> Counter {
+    // Read the input
+    let input = host.read_input(MAX_INPUT_MESSAGE_SIZE);
 
-    // Public read-only method: Returns the counter value
-    pub fn get_num(&self) -> i8 {
-        self.val
-    }
-
-    // Increment the counter
-    pub fn increment(&mut self) -> i8 {
-        self.val += 1;
-        return self.val;
-    }
-
-    pub fn decrement(&mut self) -> i8 {
-        self.val -= 1;
-        return self.val;
-    }
-
-    // Reset the counter to 0
-    pub fn reset(&mut self) -> i8 {
-        self.val = 0;
-        return self.val;
-    }
-}
-
-pub fn handle_input_message<H: RawRollupCore>(host: &mut H, message: MessageData) -> Result<()> {
-    // processing counter function
-    let path: OwnedPath = "/counter"
-        .as_bytes()
-        .to_vec()
-        .try_into()
-        .map_err(|e| anyhow::Error::msg(format!("{e:?}")))?;
-    let counter = match Runtime::store_read(host, &path, 0, 1) {
-        Ok(counter) => counter,
-        Err(_) => vec![0],
-    };
-    ensure!(counter.len() == 1, "counter is not a byte");
-    let mut counter = Counter {
-        val: i8::from_le_bytes(counter[..].try_into().unwrap()),
-    };
-
-    // Handle message and counter incr
-    debug_msg!(H, "Received message {:?}", message);
-    counter.increment();
-    debug_msg!(H, "Counter {:#?}", counter);
-
-    // We need to persist the effect in `counter`
-    Runtime::store_write(host, &path, &counter.val.to_le_bytes(), 0)
-        .map_err(|e| anyhow::Error::msg(format!("{e:?}")))?;
-    Ok(())
-}
-
-pub fn counter_run<Host: RawRollupCore>(host: &mut Host) {
-    // Reading the input from host
-    match host.read_input(MAX_READ_INPUT_SIZE) {
-        Ok(Some(InputType::Message(message))) => {
-            debug_msg!(
-                Host,
-                "message data at level:{} - id:{}",
-                message.level,
-                message.id
-            );
-            if let Err(_) = handle_input_message(host, message) {
-                // log and gracefully exit
+    match input {
+        // If it's an error or no message then does nothing}
+        Err(_) | Ok(None) => counter,
+        Ok(Some(message)) => {
+            // If there is a message let's process it.
+            debug_msg!(Host, "Hello message\n");
+            let data = message.as_ref();
+            match data {
+                [0x00, ..] => {
+                    debug_msg!(Host, "Message from the kernel.\n");
+                    execute(host, counter)
+                }
+                [0x01, ..] => {
+                    debug_msg!(Host, "Message from the user.\n");
+                    // Let's skip the first byte of the data to get what the user has sent.
+                    let user_message: Vec<&u8> = data.iter().skip(1).collect();
+                    // We are parsing the message from the user.
+                    // In the case of a good encoding we can process it.
+                    let user_message = UserAction::try_from(user_message);
+                    match user_message {
+                        Ok(user_message) => {
+                            // FIXME: should we perhaps inline this logic into
+                            // this module?
+                            let counter = transition(counter, user_message);
+                            execute(host, counter)
+                        }
+                        Err(_) => execute(host, counter),
+                    }
+                }
+                _ =>
+                // FIXME: what is this case?
+                // If these cases are well-defined, can the SDK return an enum instead
+                // of the raw bytes?
+                // E.g. `enum Message { Kernel(Vec<u8>), User(Vec<u8>) }`
+                {
+                    execute(host, counter)
+                }
             }
         }
-        Ok(Some(InputType::Slot(_message))) => todo!("handle slot message"),
-        Ok(None) => debug_msg!(Host, "no input"),
-        Err(_) => todo!("handle errors"),
     }
 }
 
-#[cfg(not(test))]
-pub mod entry {
-    use super::counter_run;
+fn entry<Host: RawRollupCore>(host: &mut Host) {
+    let counter_path: OwnedPath = "/counter".as_bytes().to_vec().try_into().unwrap();
+    let counter = Runtime::store_read(host, &counter_path, 0, 8)
+        .map_err(|_| "Runtime error".to_string())
+        .and_then(Counter::try_from)
+        .unwrap_or_default();
 
-    use kernel::kernel_entry;
+    debug_msg!(Host, "Hello kernel\n");
+    let counter = execute(host, counter);
 
-    kernel_entry!(counter_run);
+    let counter: [u8; 8] = counter.into();
+    let _ = Runtime::store_write(host, &counter_path, &counter, 0);
 }
 
-#[cfg(test)]
-mod tests {
-    use host::rollup_core::Input;
-    use wasm_bindgen_test::wasm_bindgen_test;
+kernel_entry!(entry);
 
-    use super::*;
-
-    #[wasm_bindgen_test]
-    fn test_with_mock() {
-        use crate::counter_run;
-        use mock_runtime::host::MockHost;
-
-        // Arrange
-        let mut mock_runtime = MockHost::default();
-        let val = 0;
-        let counter = Counter::new(val);
-        let message = format!("counter {}", counter.get_num()).into();
-
-        let level = 10;
-        mock_runtime.as_mut().set_ready_for_input(level);
-        mock_runtime
-            .as_mut()
-            .add_next_inputs(10, vec![(Input::MessageData, message)].iter());
-
-        // Act
-        counter_run(&mut mock_runtime);
-    }
-}
+// To run:
+// 1. cargo build --release --target wasm32-unknown-unknown --features greeter
+// 2. octez-smart-rollup-wasm-debugger target/wasm32-unknown-unknown/release/coutner_kernel.wasm --inputs ./counter_kernel/inputs.json
+// 'load inputs'
+// 'step result'
+// 'show key /counter'

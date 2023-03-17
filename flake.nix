@@ -29,8 +29,15 @@
           rust-analyzer
           wabt
           clang
-          tezos.packages.${system}.octez-smart-rollup-wasm-debugger
+          # Temporarily removed until https://gitlab.com/tezos/tezos/-/merge_requests/8101 is merged
+          # tezos.packages.${system}.octez-smart-rollup-wasm-debugger
+          
           cargo-make
+
+          # MDX dependencies
+          ocaml
+          dune_3
+          ocamlPackages.mdx
 
           (rust-bin.stable."1.66.0".default.override {
             targets = ["wasm32-unknown-unknown"];

@@ -1,8 +1,8 @@
 [workspace]
 
 members = [
-    "counter_kernel",
-    "debug_kernel",
+    "00_debug_kernel",
+    "01_counter_kernel",
     # Disabled for now, because it doesn't compile.
     # "hello_kernel",
     # "output_kernel",

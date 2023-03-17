@@ -1,15 +1,30 @@
-# Pistachio
+# SORU Kernel Gallery
 
 [[_TOC_]]
 
-Pistachio is an example project to show how to develop and use [Tezos SORU WASM kernel](http://tezos.gitlab.io/alpha/smart_rollups.html#developing-wasm-kernels). Currently we have 4 example kernels:
 
-- **debug kernel**: shows how to use `WasmHost::write_debug` to write message to the debug log.
-- **output kernel**: shows how to use input/output message.
-- **hello kernel**: shows how to use [Capn' Proto](https://capnproto.org) for safe and efficient message decoding on DAC/DAL input.
-- **counter kernel**: shows how to storing (read/write) an `Int`.
+The kernel gallery is a direcory of examples to help you get started writing
+your own WASM kernels for [Tezos SORU](http://tezos.gitlab.io/alpha/smart_rollups.html).
 
-## Build
+This repository is intended as companion to the docs on [developing your wasm kernel](http://tezos.gitlab.io/alpha/smart_rollups.html#developing-wasm-kernels). Additionally, it showcases
+simple end-to-end rollup applications, demonstrating how you can use rollups in your DApps.
+
+We recommend going through examples in order:
+- **00_debug_kernel**: shows how to debug messages and read from the shared inbox.
+- **01_counter_kernel**: shows a simple rollup that tracks how many times users have called in in its persistent storage. Additionally introductes the `mock_host` testing fixtures.
+- **02_tzwitter**: a twitter clone demonstrating a full rollup DApp.
+
+Each kernel directory includes a README.md that demonstrates how to test the kernel
+with the `octez-smart-rollup-wasm-debugger` against a set of inputs and commands. The
+expected outputs are included in the README and checked in CI with [MDX](https://github.com/realworldocaml/mdx).
+
+## Setup
+
+To build the kernels, you will need the Rust toolchain with WASM support installed, detailed below.
+
+To run the `octez-smart-rollup-wasm-debugger`, you will need to install it [from OPAM](https://opam.ocaml.org/packages/octez-smart-rollup-wasm-debugger/).
+
+Alternatively, Nix users can activate a shell with the required dependencies with `nix develop`.
 
 ### Setup Rust
 
@@ -30,7 +45,7 @@ or, you can use `rustup` instead,
 
 ```shell
 rustup update 1.66.0
-rustup override set 1.66.0-<channel_full_name>
+rustup override set 1.66.0-<channel_full_name>op
 rustup toolchain install 1.66.0
 ```
 
@@ -44,11 +59,27 @@ We need to add `wasm32-unknown-unknown` to be a possible target of Rust:
 rustup target add wasm32-unknown-unknown
 ```
 
-### Install Cap'n Proto
+## Build the WASM kernels
 
-The `Cap'n proto` tools is required by the example `hello-kernel`. Please read https://capnproto.org/install.html to install it to your system.
 
-### Build kernel to WASM with Cargo
+You can build all the kernels with Cargo:
+
+```
+cargo build --release --target wasm32-unknown-unknown
+```
+### Strip the generated WASM
+
+The size of generated wasm file might be large, but [WebAssembly Binary Toolkit (wabt)](https://github.com/WebAssembly/wabt) provides a tool, `wasm-strip`, to strip down the size of our wasm kernel.
+
+Notice that, you need to make sure you have installed `wabt` with your system package manager; and, `wasm-strip` will directly edit the wasm file, so you might want to backup your wasm file.
+
+```shell
+wasm-strip target/wasm32-unknown-unknown/release/<name>_kernel.wasm
+```
+
+
+<!-- TODO: I haven't finished editing past this point:-->
+## Tests
 
 We provide pre-defined tasks for building kernels, that requires [`cargo-make`](https://github.com/sagiegurari/cargo-make):
 
@@ -64,15 +95,7 @@ cargo make wasm-<name>-kernel
 
 This will export the wasm file at the directory `target/wasm32-unknown-unknown/release/<name>_kernel.wasm`.
 
-### Strip the generated WASM
 
-The size of generated wasm file might be large, but [WebAssembly Binary Toolkit (wabt)](https://github.com/WebAssembly/wabt) provides a tool, `wasm-strip`, to strip down the size of our wasm kernel.
-
-Notice that, you need to make sure you have installed `wabt` with your system package manager; and, `wasm-strip` will directly edit the wasm file, so you might want to backup your wasm file.
-
-```shell
-wasm-strip target/wasm32-unknown-unknown/release/<name>_kernel.wasm
-```
 
 ## Unit Test
 

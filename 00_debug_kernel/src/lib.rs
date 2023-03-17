@@ -19,7 +19,7 @@ use kernel::kernel_entry;
 fn entry<Host: RawRollupCore>(host: &mut Host) {
     // The `debug_msg!` macro prints messages that can be observed
     // when executing with the octez-smart-rollup-wasm-debugger binary.
-    debug_msg!(Host, "Hello from kernel!!\n");
+    debug_msg!(Host, "Hello from kernel!\n");
 
     // Read the next inbox message from the runtime.
     match host.read_input(MAX_INPUT_MESSAGE_SIZE) {

@@ -38,6 +38,17 @@ workspace = false
 command = "cargo"
 args = ["test", "--features", "testing"]
 
+[tasks.docs-test-clean]
+workspace = false
+command = "dune"
+args = ["clean"]
+
+[tasks.docs-test]
+workspace = false
+command = "dune"
+args = ["runtest"]
+dependencies = ["docs-test-clean", "wasm-debug-kernel", "wasm-counter-kernel" ]
+
 [tasks.doc]
 workspace = false
 command = "cargo"
@@ -50,6 +61,7 @@ dependencies = [
     "fmt-check",
     "wasm-debug-kernel",
     "wasm-counter-kernel",
+    "docs-test"
     # FIXME: re-enable these when they compile
     # "wasm-output-kernel",
     # "wasm-hello-kernel",

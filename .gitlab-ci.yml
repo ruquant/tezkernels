@@ -1,3 +1,4 @@
-job_name:
+run_everything:
+  image: nixos/nix
   script:
     - nix develop --command cargo make ci

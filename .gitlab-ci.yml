@@ -1,4 +1,8 @@
 run_everything:
   image: nixos/nix
   script:
-    - nix develop --extra-experimental-features 'nix-command flakes' --extra-substituters https://tezos.nix-cache.workers.dev --extra-trusted-public-keys tezos-nix-cache.marigold.dev-1:4nS7FPPQPKJIaNQcbwzN6m7kylv16UCWWgjeZZr2wXA= --command cargo make ci
+    - nix develop \
+        --extra-experimental-features 'nix-command flakes' \
+        --extra-substituters https://tezos.nix-cache.workers.dev \
+        --extra-trusted-public-keys tezos-nix-cache.marigold.dev-1:4nS7FPPQPKJIaNQcbwzN6m7kylv16UCWWgjeZZr2wXA= \
+        --command cargo make ci

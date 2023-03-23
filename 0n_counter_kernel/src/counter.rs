@@ -1,4 +1,5 @@
 use tezos_data_encoding::enc::BinWriter;
+use tezos_smart_rollup_host::runtime::RuntimeError;
 
 #[derive(Debug, PartialEq)]
 pub struct Counter {
@@ -43,6 +44,7 @@ impl Into<[u8; 8]> for Counter {
     }
 }
 
+
 #[derive(Debug, PartialEq, Eq, BinWriter)]
 pub enum UserAction {
     Increment,
@@ -58,15 +60,22 @@ pub fn transition(counter: Counter, action: UserAction) -> Counter {
     }
 }
 
+#[derive(Debug)]
+pub enum InputError {
+    Runtime(RuntimeError),
+    NoMoreMessages,
+    DeserializationError,
+}
+
 impl TryFrom<Vec<&u8>> for UserAction {
-    type Error = String;
+    type Error = InputError;
 
     fn try_from(value: Vec<&u8>) -> Result<Self, Self::Error> {
         match value.as_slice() {
             [0x00] => Ok(UserAction::Increment),
             [0x01] => Ok(UserAction::Decrement),
             [0x02] => Ok(UserAction::Reset),
-            _ => Err("Deserialization is not respected".to_string()),
+            _ => Err(InputError::DeserializationError),
         }
     }
 }

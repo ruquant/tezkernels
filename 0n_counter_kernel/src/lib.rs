@@ -1,8 +1,5 @@
 extern crate alloc;
 
-use tezos_smart_rollup_debug::debug_msg;
-use tezos_smart_rollup_encoding::inbox::InboxMessage;
-use tezos_smart_rollup_encoding::michelson::MichelsonUnit;
 use tezos_smart_rollup_entrypoint::kernel_entry;
 use tezos_smart_rollup_host::runtime::Runtime;
 
@@ -10,21 +7,21 @@ mod counter;
 use counter::*;
 
 use tezos_smart_rollup_host::path::OwnedPath;
-fn execute<Host: Runtime>(host: &mut Host, counter: Counter) -> Counter {
+
+fn parse_input<Host: Runtime>(host: &mut Host) -> Result<Option<UserAction>, InputError> {
     // Read the input
     let input = host.read_input();
-
     match input {
-        // If it's an error or no message then does nothing}
-        Err(_) | Ok(None) => counter,
+        // If it's an error or no message then does nothing
+        Err(e) => Err(InputError::Runtime(e)),
+        Ok(None) => Err(InputError::NoMoreMessages),
         Ok(Some(message)) => {
-            // If there is a message let's process it.
             host.write_debug("Hello message\n");
             let data = message.as_ref();
             match data {
                 [0x00, ..] => {
                     host.write_debug("Message from the kernel.\n");
-                    execute(host, counter)
+                    Ok(None)
                 }
                 [0x01, ..] => {
                     host.write_debug("Message from the user.\n");
@@ -34,15 +31,27 @@ fn execute<Host: Runtime>(host: &mut Host, counter: Counter) -> Counter {
                     // In the case of a good encoding we can process it.
                     let user_message = UserAction::try_from(user_message);
                     match user_message {
-                        Ok(user_message) => {
-                            let counter = transition(counter, user_message);
-                            execute(host, counter)
+                        Ok(user_message) => Ok(Some(user_message)),
+                        Err(e) => Err(e),
                         }
-                        Err(_) => execute(host, counter),
                     }
-                }
-                _ => execute(host, counter),
+                _ => Ok(None),
             }
+        }
+    }
+}
+
+fn execute<Host: Runtime>(host: &mut Host, counter: Counter) -> Counter {
+    let input = parse_input(host);
+    match input {
+        Err(_) => counter,
+        // If there is a message let's process it.
+        Ok(input) => {
+            let counter = match input {
+                Some(user_message) => transition(counter, user_message),
+                None => counter,
+            };
+            execute(host, counter)
         }
     }
 }
@@ -70,8 +79,33 @@ kernel_entry!(entry);
 // 'step result'
 // 'show key /counter'
 
+#[cfg(test)]
 mod test {
     use super::*;
+
+    fn assert_eq_input<Host: Runtime>(host: &mut Host, action: UserAction) {
+        let message = parse_input(host).unwrap();
+        assert_eq!(message, Some(action));
+    }
+
+
+    #[test]
+    fn test_parse_input() {
+        let mut host = tezos_smart_rollup_mock::MockHost::default();
+
+        host.add_external(UserAction::Increment);
+        host.add_external(UserAction::Decrement);
+        host.add_external(UserAction::Reset);
+
+        assert_eq_input(&mut host, UserAction::Increment);
+        assert_eq_input(&mut host, UserAction::Decrement);
+        assert_eq_input(&mut host, UserAction::Reset);
+
+        // TODO: test invalid input
+
+        let message = parse_input(&mut host);
+        assert!(matches!(message, Err(InputError::NoMoreMessages)));
+    }
 
     #[test]
     fn test_counter() {
@@ -87,8 +121,11 @@ mod test {
 
         assert_eq!(counter, Counter { counter: 0 });
 
-        let action = UserAction::Increment;
-        host.add_external(action);
+        host.add_external(UserAction::Increment);
+        host.add_external(UserAction::Reset);
+        host.add_external(UserAction::Increment);
+        host.add_external(UserAction::Increment);
+        host.add_external(UserAction::Decrement);
         host.run_level(entry);
         let counter = Runtime::store_read(&mut host, &counter_path, 0, 8)
             .map_err(|_| "Runtime error".to_string())

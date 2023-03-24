@@ -101,6 +101,21 @@
         "type": "github"
       }
     },
+    "nix-filter": {
+      "locked": {
+        "lastModified": 1678109515,
+        "narHash": "sha256-C2X+qC80K2C1TOYZT8nabgo05Dw2HST/pSn6s+n6BO8=",
+        "owner": "numtide",
+        "repo": "nix-filter",
+        "rev": "aa9ff6ce4a7f19af6415fb3721eaa513ea6c763c",
+        "type": "github"
+      },
+      "original": {
+        "owner": "numtide",
+        "repo": "nix-filter",
+        "type": "github"
+      }
+    },
     "nixpkgs": {
       "locked": {
         "lastModified": 1678478120,
@@ -223,6 +238,7 @@
     "root": {
       "inputs": {
         "flake-utils": "flake-utils",
+        "nix-filter": "nix-filter",
         "nixpkgs": "nixpkgs",
         "rust-overlay": "rust-overlay",
         "tezos": "tezos"
@@ -257,15 +273,16 @@
         "treefmt-nix": "treefmt-nix"
       },
       "locked": {
-        "lastModified": 1678824659,
-        "narHash": "sha256-HVPCegoE50hp0mIY4pFHebAYwotP743TzzeoXsfKH1g=",
+        "lastModified": 1679624839,
+        "narHash": "sha256-ACADmP/Sl+UJdEZOKMB99clogZVExPrmBPeuwxOPvGk=",
         "owner": "marigold-dev",
         "repo": "tezos-nix",
-        "rev": "7a01e486b0328c1b32ec120af3a90faa48d67f3c",
+        "rev": "675c9ea2cb9e2a28a43e8c72a10dc0f751107d78",
         "type": "github"
       },
       "original": {
         "owner": "marigold-dev",
+        "ref": "d4hines/smart-rollup-libs",
         "repo": "tezos-nix",
         "type": "github"
       }

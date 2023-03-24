@@ -2,24 +2,32 @@
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs";
     flake-utils.url = "github:numtide/flake-utils";
+    nix-filter.url = "github:numtide/nix-filter";
     rust-overlay.url = "github:oxalica/rust-overlay";
-    tezos.url = "github:marigold-dev/tezos-nix";
+    tezos.url = "github:marigold-dev/tezos-nix/d4hines/smart-rollup-libs";
   };
 
   outputs = {
     self,
     nixpkgs,
     flake-utils,
+    nix-filter,
     rust-overlay,
     tezos,
   }:
     flake-utils.lib.eachDefaultSystem (system: let
       pkgs = import nixpkgs {
         inherit system;
-        overlays = [rust-overlay.overlays.default];
+        overlays = [rust-overlay.overlays.default tezos.overlays.default];
+      };
+      outbox-daemon = import ./nix/outbox-daemon.nix {
+        inherit pkgs;
+        nix-filter = nix-filter.lib;
       };
     in {
+      packages = {inherit outbox-daemon;};
       devShell = pkgs.mkShell {
+        inputsFrom = [outbox-daemon];
         shellHook = ''
           export CC=$(which clang)
         '';

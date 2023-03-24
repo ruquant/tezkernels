@@ -125,7 +125,3 @@ You can find more details at:
 
 - [How to interact with Mondaynet](doc/how-to-mondaynet.md)
 - [How to interact with SORU](doc/how-to-soru.md)
-
-## Footnotes
-
-The logo of this project is the [Pistachio icons created by Freepik - Flaticon](https://www.flaticon.com/free-icons/pistachio).

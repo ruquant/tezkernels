@@ -1,7 +1,12 @@
 // src/counter.rs
 
+use tezos_data_encoding::enc::BinWriter;
+// use tezos_data_encoding::nom::NomReader;
+// use tezos_data_encoding::encoding::HasEncoding;
+
+#[derive(Debug, PartialEq)]
 pub struct Counter {
-    counter: i64,
+    pub(crate) counter: i64,
 }
 
 impl Default for Counter {
@@ -42,10 +47,12 @@ impl Into<[u8; 8]> for Counter {
     }
 }
 
+#[derive(Debug, PartialEq, Eq, BinWriter)]
+#[encoding(tags = "u8")]
 pub enum UserAction {
     Increment,
     Decrement,
-    Reset,
+    Reset
 }
 
 pub fn transition(counter: Counter, action: UserAction) -> Counter {
@@ -56,15 +63,13 @@ pub fn transition(counter: Counter, action: UserAction) -> Counter {
     }
 }
 
-impl TryFrom<Vec<&u8>> for UserAction {
-    type Error = String;
-
-    fn try_from(value: Vec<&u8>) -> Result<Self, Self::Error> {
-        match value.as_slice() {
-            [0x00] => Ok(UserAction::Increment),
-            [0x01] => Ok(UserAction::Decrement),
-            [0x02] => Ok(UserAction::Reset),
-            _ => Err("Deserialization is not respected".to_string()),
+impl TryFrom<&[u8]> for UserAction {
+    type Error = (); // FIXME: proper error type
+    
+    fn try_from(value: &[u8]) -> Result<Self, Self::Error> {
+        match value {
+            [0, ..] => Ok(UserAction::Increment),
+            _ => panic!("")
         }
     }
 }

@@ -18,7 +18,7 @@
     flake-utils.lib.eachDefaultSystem (system: let
       pkgs = import nixpkgs {
         inherit system;
-        overlays = [rust-overlay.overlays.default tezos.overlays.default];
+        overlays = [rust-overlay.overlays.default tezos.overlays.trunk];
       };
       outbox-daemon = import ./nix/outbox-daemon.nix {
         inherit pkgs;

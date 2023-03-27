@@ -19,7 +19,7 @@ with ocamlPackages;
     duneVersion = "3";
 
     propagatedBuildInputs = with ocamlPackages; [
-      tezos-alpha.smart-rollup-client
+      tezos-alpha.smart-rollup-client-lib
       tezos-alpha.protocol
       tezos-base
       tezos-clic

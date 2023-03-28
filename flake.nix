@@ -1,6 +1,12 @@
 {
+   nixConfig = {
+    extra-substituters = ["https://tezos.nix-cache.workers.dev"];
+    extra-trusted-public-keys = ["tezos-nix-cache.marigold.dev-1:4nS7FPPQPKJIaNQcbwzN6m7kylv16UCWWgjeZZr2wXA="];
+  };
+
+
   inputs = {
-    nixpkgs.url = "github:nixos/nixpkgs";
+    nixpkgs.follows = "tezos/nixpkgs";
     flake-utils.url = "github:numtide/flake-utils";
     nix-filter.url = "github:numtide/nix-filter";
     rust-overlay.url = "github:oxalica/rust-overlay";
@@ -37,8 +43,7 @@
           rust-analyzer
           wabt
           clang
-          # Temporarily removed until https://gitlab.com/tezos/tezos/-/merge_requests/8101 is merged
-          # tezos.packages.${system}.octez-smart-rollup-wasm-debugger
+          tezos.packages.${system}.trunk-octez-smart-rollup-wasm-debugger
           
           cargo-make
 

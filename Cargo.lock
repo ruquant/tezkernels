@@ -660,6 +660,19 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a2eb9349b6444b326872e140eb1cf5e7c522154d69e7a0ffb0fb81c06b37543f"
 
 [[package]]
+name = "storage-kernel"
+version = "0.1.0"
+dependencies = [
+ "tezos_smart_rollup_core",
+ "tezos_smart_rollup_debug",
+ "tezos_smart_rollup_encoding",
+ "tezos_smart_rollup_entrypoint",
+ "tezos_smart_rollup_host",
+ "tezos_smart_rollup_mock",
+ "tezos_smart_rollup_storage",
+]
+
+[[package]]
 name = "strum"
 version = "0.20.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"

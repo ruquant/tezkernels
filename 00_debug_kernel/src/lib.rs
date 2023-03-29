@@ -1,9 +1,10 @@
 extern crate alloc;
 
-use debug::debug_msg;
-use host::rollup_core::{RawRollupCore, MAX_INPUT_MESSAGE_SIZE};
-use host::runtime::Runtime;
-use kernel::kernel_entry;
+use tezos_smart_rollup_debug::debug_msg;
+use tezos_smart_rollup_encoding::inbox::InboxMessage;
+use tezos_smart_rollup_encoding::michelson::MichelsonUnit;
+use tezos_smart_rollup_entrypoint::kernel_entry;
+use tezos_smart_rollup_host::runtime::Runtime;
 
 /// The main entrypoint of the kernel.
 ///
@@ -16,37 +17,36 @@ use kernel::kernel_entry;
 /// and that inputs are handled appropriately. We'll cover some of these topics
 /// in coming examples, but we suggest having a look at the documentation as well:
 /// https://tezos.gitlab.io/mumbai/smart_rollups.html#developing-wasm-kernels
-fn entry<Host: RawRollupCore>(host: &mut Host) {
+fn entry(host: &mut impl Runtime) {
     // The `debug_msg!` macro prints messages that can be observed
     // when executing with the octez-smart-rollup-wasm-debugger binary.
-    debug_msg!(Host, "Hello from kernel!\n");
+    debug_msg!(host, "Hello from kernel!\n");
 
     // Read the next inbox message from the runtime.
-    match host.read_input(MAX_INPUT_MESSAGE_SIZE) {
+    match host.read_input() {
         Ok(Some(input)) => {
-            let message = input.as_ref();
+            let (_remaining, message) =
+                InboxMessage::<MichelsonUnit>::parse(input.as_ref()).unwrap(); // TODO: handle error
+
             // The first byte of the message is used to distinguish between
             // messages from the runtime and messages from the user.
             // TODO: include a table detailing the message types.
-            match message.get(0) {
-                Some(0x00) => {
-                    debug_msg!(Host, "Message from the runtime: {:?}\n", message);
+            match message {
+                InboxMessage::Internal(_) => {
+                    debug_msg!(host, "Message from the runtime: {:?}\n", message);
                 }
-                Some(0x01) => {
+                InboxMessage::External(message) => {
                     debug_msg!(
-                        Host,
+                        host,
                         "Message from the user: {}.\n",
                         String::from_utf8_lossy(message)
                     );
-                }
-                _ => {
-                    debug_msg!(Host, "Message from the unknown.\n");
                 }
             }
         }
         Ok(None) => (),
         Err(err) => {
-            debug_msg!(Host, "Error reading input: {:?}\n", err);
+            debug_msg!(host, "Error reading input: {:?}\n", err);
             ()
         }
     };

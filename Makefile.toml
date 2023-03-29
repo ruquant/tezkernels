@@ -13,30 +13,14 @@ args = ["fmt"]
 command = "cargo"
 args = ["fmt", "--", "--check"]
 
-[tasks.wasm-debug-kernel]
-workspace = false
+[tasks.wasm]
 command = "cargo"
-args = ["build", "-p", "debug-kernel",  "--release", "--target", "wasm32-unknown-unknown"]
-
-[tasks.wasm-counter-kernel]
-workspace = false
-command = "cargo"
-args = ["build", "-p", "counter-kernel", "--release", "--target", "wasm32-unknown-unknown"]
-
-[tasks.wasm-output-kernel]
-workspace = false
-command = "cargo"
-args = ["build", "-p", "output-kernel", "--release", "--target", "wasm32-unknown-unknown"]
-
-[tasks.wasm-hello-kernel]
-workspace = false
-command = "cargo"
-args = ["build", "-p", "hello-kernel", "--release", "--target", "wasm32-unknown-unknown"]
+args = ["build", "--release","--target", "wasm32-unknown-unknown"]
 
 [tasks.test]
 workspace = false
 command = "cargo"
-args = ["test", "--features", "testing"]
+args = ["test"]
 
 [tasks.docs-test-clean]
 workspace = false
@@ -47,7 +31,7 @@ args = ["clean"]
 workspace = false
 command = "dune"
 args = ["runtest"]
-dependencies = ["docs-test-clean", "wasm-debug-kernel", "wasm-counter-kernel" ]
+dependencies = ["docs-test-clean", "wasm" ]
 
 [tasks.doc]
 workspace = false
@@ -59,12 +43,9 @@ workspace = false
 dependencies = [
     "fmt", # FIXME: do we need both fmt and fmt-check here?
     "fmt-check",
-    "wasm-debug-kernel",
-    "wasm-counter-kernel",
-    "docs-test"
+    "wasm",
+    "docs-test",
+    "test"
     # FIXME: re-enable these when they compile
-    # "wasm-output-kernel",
-    # "wasm-hello-kernel",
-    # "test",
     # "doc",
 ]

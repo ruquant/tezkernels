@@ -1,7 +1,8 @@
-// src/counter.rs
+use tezos_data_encoding::enc::BinWriter;
 
+#[derive(Debug, PartialEq)]
 pub struct Counter {
-    counter: i64,
+    pub(crate) counter: i64,
 }
 
 impl Default for Counter {
@@ -42,6 +43,7 @@ impl Into<[u8; 8]> for Counter {
     }
 }
 
+#[derive(Debug, PartialEq, Eq, BinWriter)]
 pub enum UserAction {
     Increment,
     Decrement,

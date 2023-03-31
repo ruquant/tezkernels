@@ -34,7 +34,7 @@
       devShell = let
        packageLibDirs =
         builtins.filter builtins.pathExists (
-          builtins.map (package: "${package}/lib/${package.pname}") packages
+          builtins.map (package: "${package}/lib/${package.pname}") pkgs.ocamlPackages
         );
        packageIncludeArgs = builtins.map (dir: "-I${dir}") packageLibDirs;
 

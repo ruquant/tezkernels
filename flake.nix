@@ -32,6 +32,7 @@
     in {
       packages = {inherit outbox-daemon;};
       devShell = let
+       packageIncludeArgs = builtins.map (dir: "-I${dir}") packageLibDirs;
         mkFrameworkFlags = frameworks:
           pkgs.lib.concatStringsSep " " (
             pkgs.lib.concatMap

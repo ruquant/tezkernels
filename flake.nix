@@ -32,8 +32,13 @@
     in {
       packages = {inherit outbox-daemon;};
       devShell = let
+        packages =
+          builtins.filter
+          pkgs.lib.attrsets.isDerivation
+          (builtins.attrValues pkgs.ocamlPackages);
+
         packageLibDirs = builtins.filter builtins.pathExists (
-          builtins.map (package: "${package}/lib/${package.pname}") pkgs.ocamlPackages
+          builtins.map (package: "${package}/lib/${package.pname}") packages
         );
         packageIncludeArgs = builtins.map (dir: "-I${dir}") packageLibDirs;
 

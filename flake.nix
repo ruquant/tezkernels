@@ -60,10 +60,10 @@
             # Silence errors (-Werror) for unsupported flags on MacOS.
             pkgs.lib.optionals
             pkgs.stdenv.isDarwin
-            ["-Wno-unused-command-line-argument"]
-            ++
-            # Make sure headers files are in scope.
-            packageIncludeArgs;
+            ["-Wno-unused-command-line-argument"];
+            # ++
+            # # Make sure headers files are in scope.
+            # packageIncludeArgs;
           NIX_LDFLAGS = pkgs.lib.optional pkgs.stdenv.isDarwin (
             mkFrameworkFlags [
               "CoreFoundation"

@@ -32,11 +32,10 @@
     in {
       packages = {inherit outbox-daemon;};
       devShell = let
-       packageLibDirs =
-        builtins.filter builtins.pathExists (
+        packageLibDirs = builtins.filter builtins.pathExists (
           builtins.map (package: "${package}/lib/${package.pname}") pkgs.ocamlPackages
         );
-       packageIncludeArgs = builtins.map (dir: "-I${dir}") packageLibDirs;
+        packageIncludeArgs = builtins.map (dir: "-I${dir}") packageLibDirs;
 
         mkFrameworkFlags = frameworks:
           pkgs.lib.concatStringsSep " " (
@@ -49,28 +48,25 @@
             )
             frameworks
           );
-
-        NIX_LDFLAGS = pkgs.lib.optional pkgs.stdenv.isDarwin (
-          mkFrameworkFlags [
-            "CoreFoundation"
-            "IOKit"
-            "AppKit"
-          ]
-        );
-        NIX_CFLAGS_COMPILE =
-          # Silence errors (-Werror) for unsupported flags on MacOS.
-          pkgs.lib.optionals
-          pkgs.stdenv.isDarwin
-          ["-Wno-unused-command-line-argument"]
-          ++
-          # Make sure headers files are in scope.
-          packageIncludeArgs;
       in
         pkgs.mkShell {
           inputsFrom = [outbox-daemon];
+          NIX_CFLAGS_COMPILE =
+            # Silence errors (-Werror) for unsupported flags on MacOS.
+            pkgs.lib.optionals
+            pkgs.stdenv.isDarwin
+            ["-Wno-unused-command-line-argument"]
+            ++
+            # Make sure headers files are in scope.
+            packageIncludeArgs;
+          NIX_LDFLAGS = pkgs.lib.optional pkgs.stdenv.isDarwin (
+            mkFrameworkFlags [
+              "CoreFoundation"
+              "IOKit"
+              "AppKit"
+            ]
+          );
           shellHook = ''
-            export NEX_LDFLAGS=${NIX_LDFLAGS}
-            export NIX_CFLAGS_COMPILE=${NIX_CFLAGS_COMPILE}
             export CC=$(which clang)
           '';
           packages = with pkgs; [

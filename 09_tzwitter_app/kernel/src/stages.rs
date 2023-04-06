@@ -18,8 +18,7 @@ use tezos_data_encoding::{enc::BinWriter, types::Zarith};
 use tezos_smart_rollup_encoding::{
     contract::Contract,
     entrypoint::Entrypoint,
-    inbox::InboxMessage,
-    michelson::{MichelsonContract, MichelsonInt, MichelsonPair, MichelsonString, MichelsonUnit},
+    michelson::{MichelsonContract, MichelsonInt, MichelsonPair, MichelsonString},
     outbox::{OutboxMessage, OutboxMessageTransaction, OutboxMessageTransactionBatch},
 };
 use tezos_smart_rollup_host::runtime::Runtime;
@@ -31,7 +30,7 @@ use crate::core::message::Message;
 ///
 /// It will only read messages External Messages with the MAGIC_BYTE
 /// Benchmark: 2_000_000 ticks (processing an inbox with only one message)
-pub fn read_input<R: Runtime>(host: &mut R) -> std::result::Result<Message, ReadInputError> {
+pub fn read_input<R: Runtime>(host: &mut R) -> std::result::Result<(Message, u32), ReadInputError> {
     let input = host.read_input().map_err(ReadInputError::Runtime)?;
     match input {
         None => Err(ReadInputError::EndOfInbox),
@@ -41,42 +40,12 @@ pub fn read_input<R: Runtime>(host: &mut R) -> std::result::Result<Message, Read
                 [0x01, MAGIC_BYTE, ..] => {
                     let bytes = data.iter().skip(2).copied().collect();
                     let str = String::from_utf8(bytes).map_err(ReadInputError::FromUtf8Error)?;
-                    serde_json_wasm::from_str(&str).map_err(ReadInputError::SerdeJson)
+                    let msg = serde_json_wasm::from_str(&str).map_err(ReadInputError::SerdeJson)?;
+                    Ok((msg, message.level))
                 }
                 _ => Err(ReadInputError::NotATzwitterMessage),
             }
         }
-    }
-}
-
-/// Returns the hash of the previous block
-/// /!\ /!\ This function should be call one time BEFORE the read_input function (see above)
-/// Because it will read the first 2 messages of the inbox
-/// TODO: how to have the current level of the block?
-/// It should be better if this function returns the current level of the block
-pub fn get_previous_block_hash<R: Runtime>(host: &mut R) -> Result<String> {
-    // It ignores the StartOfLevel
-    let _ = host.read_input().map_err(Error::Runtime)?;
-
-    // It reads the InfoPerLevel
-    let input = host.read_input().map_err(Error::Runtime)?;
-
-    // And then extract the precessor hash as a string (which not the best type)
-
-    let input = input.ok_or(Error::NotInfoPerLevelMsg)?;
-    let data = input.as_ref();
-    let msg = InboxMessage::<MichelsonUnit>::parse(data)
-        .map_err(|_| Error::NotInfoPerLevelMsg)?
-        .1;
-
-    match msg {
-        InboxMessage::External(_) => Err(Error::NotInfoPerLevelMsg),
-        InboxMessage::Internal(msg) => match msg {
-            tezos_smart_rollup_encoding::inbox::InternalInboxMessage::InfoPerLevel(info) => {
-                Ok(info.predecessor.to_base58_check())
-            }
-            _ => Err(Error::NotInfoPerLevelMsg),
-        },
     }
 }
 
@@ -163,7 +132,7 @@ pub fn transfer_tweet<R: Runtime>(
 /// Withdraw the tweet to layer 1
 pub fn withdraw_tweet<R: Runtime>(
     host: &mut R,
-    previous_hash: &str,
+    level: u32,
     account: &Account,
     tweet_id: &u64,
 ) -> Result<()> {
@@ -225,7 +194,7 @@ pub fn withdraw_tweet<R: Runtime>(
     host.write_output(&output).unwrap();
 
     // Freeze the tweets
-    set_collected_block(host, tweet_id, previous_hash)?;
+    set_collected_block(host, tweet_id, &level)?;
     // Indicates that the user is collecting the tweet
     add_collecting_tweet_to_account(host, &account.public_key_hash, tweet_id)?;
     Ok(())

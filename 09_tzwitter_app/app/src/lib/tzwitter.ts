@@ -87,7 +87,7 @@ class Tzwitter {
     const contentPath = `/tweets/${tweetId}/content`;
     const likesPath = `/tweets/${tweetId}/likes`;
     const isLikedPath = `/accounts/${publicKeyHash}/likes/${tweetId}`;
-    const collectedBlockPath = `/tweets/${tweetId}/collected_hash`;
+    const collectedBlockPath = `/tweets/${tweetId}/collected_level`;
 
     const authorBytes = await this.rollupClient.getState(authorPath);
     const contentBytes = await this.rollupClient.getState(contentPath);
@@ -103,10 +103,10 @@ class Tzwitter {
 
     // Let's estimate a mint date
     if (collectedBlockBytes) {
-      const collectedBlock = Buffer.from(collectedBlockBytes, 'hex').toString();
       const now = new Date();
-      const block = await this.rollupClient.getBlock(collectedBlock);
-      const collectedLevel = block.level;
+
+      const collectedLevel = Number.parseInt(collectedBlockBytes, 16);
+
       const currentBlockLevel = await this.rollupClient.tezosLevel();
       const delta = currentBlockLevel - collectedLevel;
       const deltaMs = delta * BLOCK_TIME * 1000;

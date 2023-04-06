@@ -14,8 +14,8 @@ mod storage;
 
 use crate::core::error::*;
 use stages::{
-    create_tweet, get_previous_block_hash, like_tweet, read_input, transfer_tweet, verify_nonce,
-    verify_signature, withdraw_tweet,
+    create_tweet, like_tweet, read_input, transfer_tweet, verify_nonce, verify_signature,
+    withdraw_tweet,
 };
 
 /// A step is processing only one message from the inbox
@@ -24,7 +24,7 @@ use stages::{
 /// - verify the signature of the message
 /// - verify the nonce of the message
 /// - handle the message
-fn step<R: Runtime>(host: &mut R, message: Message, previous_hash: &str) -> Result<()> {
+fn step<R: Runtime>(host: &mut R, message: Message, level: u32) -> Result<()> {
     let public_key = message.public_key();
     let public_key_hash = PublicKeyHash::from(public_key);
     host.write_debug("Message is deserialized\n");
@@ -43,7 +43,7 @@ fn step<R: Runtime>(host: &mut R, message: Message, previous_hash: &str) -> Resu
         Content::PostTweet(post_tweet) => create_tweet(host, &account, post_tweet)?,
         Content::LikeTweet(tweet_id) => like_tweet(host, &account, &tweet_id)?,
         Content::Transfer(transfer) => transfer_tweet(host, &account, &transfer)?,
-        Content::Collect(twwet_id) => withdraw_tweet(host, previous_hash, &account, &twwet_id)?,
+        Content::Collect(twwet_id) => withdraw_tweet(host, level, &account, &twwet_id)?,
     };
 
     Ok(())
@@ -59,24 +59,24 @@ fn step<R: Runtime>(host: &mut R, message: Message, previous_hash: &str) -> Resu
 /// This function stop its execution when a RuntimeError happens
 ///
 /// TODO: it can count ticks and reboot the kernel between two inbox message
-fn execute<R: Runtime>(host: &mut R, previous_hash: &str) -> Result<()> {
+fn execute<R: Runtime>(host: &mut R) -> Result<()> {
     let message = read_input(host);
     match message {
         Err(ReadInputError::EndOfInbox) => Ok(()),
         Err(ReadInputError::Runtime(err)) => Err(Error::Runtime(err)),
-        Err(_) => execute(host, previous_hash),
-        Ok(message) => {
+        Err(_) => execute(host),
+        Ok((message, level)) => {
             // If the message is processed we can extract the hash of the message
             let hash = message.hash();
-            let result = step(host, message, previous_hash);
+            let result = step(host, message, level);
 
             let receipt = Receipt::new(hash, &result);
             let _ = store_receipt(host, &receipt)?;
 
             match result {
                 Err(Error::Runtime(err)) => Err(Error::Runtime(err)),
-                Err(_) => execute(host, previous_hash),
-                Ok(()) => execute(host, previous_hash),
+                Err(_) => execute(host),
+                Ok(()) => execute(host),
             }
         }
     }
@@ -84,13 +84,9 @@ fn execute<R: Runtime>(host: &mut R, previous_hash: &str) -> Result<()> {
 
 pub fn entry<R: Runtime>(host: &mut R) {
     host.write_debug("Hello Kernel\n");
-
-    match get_previous_block_hash(host) {
+    match execute(host) {
+        Ok(_) => {}
         Err(err) => host.write_debug(&err.to_string()),
-        Ok(previous_hash) => match execute(host, &previous_hash) {
-            Ok(()) => {}
-            Err(err) => host.write_debug(&err.to_string()),
-        },
     }
 }
 
@@ -176,7 +172,7 @@ mod tests {
     }
 
     fn next_input<R: Runtime>(host: &mut R) -> Message {
-        read_input(host).unwrap()
+        read_input(host).unwrap().0
     }
 
     #[test]
@@ -189,7 +185,7 @@ mod tests {
         // host.as_mut().add_next_inputs(0, inputs);
 
         let message = next_input(&mut host);
-        let res = step(&mut host, message, "previous_hash");
+        let res = step(&mut host, message, 0);
 
         assert!(res.is_ok());
 
@@ -213,9 +209,9 @@ mod tests {
         host.add_external(input);
 
         let message = next_input(&mut host);
-        let res1 = step(&mut host, message, "previous_hash");
+        let res1 = step(&mut host, message, 0);
         let message = next_input(&mut host);
-        let res2 = step(&mut host, message, "previous_hash");
+        let res2 = step(&mut host, message, 0);
 
         assert!(res1.is_ok());
         assert!(res2.is_err());
@@ -230,9 +226,9 @@ mod tests {
         host.add_external(input_2);
 
         let message = next_input(&mut host);
-        let res_1 = step(&mut host, message, "previous_hash");
+        let res_1 = step(&mut host, message, 0);
         let message = next_input(&mut host);
-        let res_2 = step(&mut host, message, "previous_hash");
+        let res_2 = step(&mut host, message, 0);
 
         assert!(res_1.is_ok());
         assert!(res_2.is_ok());
@@ -252,9 +248,9 @@ mod tests {
         host.add_external(input_2);
 
         let message = next_input(&mut host);
-        let res_1 = step(&mut host, message, "previous_hash");
+        let res_1 = step(&mut host, message, 0);
         let message = next_input(&mut host);
-        let res_2 = step(&mut host, message, "previous_hash");
+        let res_2 = step(&mut host, message, 0);
 
         assert!(res_1.is_ok());
         assert!(res_2.is_ok());
@@ -275,11 +271,11 @@ mod tests {
         host.add_external(input_3);
 
         let message = next_input(&mut host);
-        let res_1 = step(&mut host, message, "previous_hash");
+        let res_1 = step(&mut host, message, 0);
         let message = next_input(&mut host);
-        let res_2 = step(&mut host, message, "previous_hash");
+        let res_2 = step(&mut host, message, 0);
         let message = next_input(&mut host);
-        let res_3 = step(&mut host, message, "previous_hash");
+        let res_3 = step(&mut host, message, 0);
 
         assert!(res_1.is_ok());
         assert!(res_2.is_ok());
@@ -299,9 +295,9 @@ mod tests {
         host.add_external(input_2);
 
         let message = next_input(&mut host);
-        let res_1 = step(&mut host, message, "previous_hash");
+        let res_1 = step(&mut host, message, 0);
         let message = next_input(&mut host);
-        let res_2 = step(&mut host, message, "previous_hash");
+        let res_2 = step(&mut host, message, 0);
 
         assert!(res_1.is_ok());
         assert!(res_2.is_ok());

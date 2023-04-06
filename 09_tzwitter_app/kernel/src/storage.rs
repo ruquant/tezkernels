@@ -46,7 +46,7 @@ fn tweet_likes_path(tweet_id: &u64) -> Result<OwnedPath> {
 /// The stored value is the block level
 /// /tweets/{id}/collected_hash
 fn tweet_collected_block_path(tweet_id: &u64) -> Result<OwnedPath> {
-    tweet_field_path(tweet_id, "/collected_hash")
+    tweet_field_path(tweet_id, "/collected_level")
 }
 
 /// Compute the paths for the different fields of an account
@@ -142,6 +142,16 @@ fn store_u64<'a, R: Runtime>(host: &mut R, path: &impl Path, u64: &'a u64) -> Re
     host.store_write(path, data, 0)
         .map_err(Error::from)
         .map(|_| u64)
+}
+
+/// Store an u32 at a given path
+fn store_u32<'a, R: Runtime>(host: &mut R, path: &impl Path, u32: &'a u32) -> Result<&'a u32> {
+    let data = u32.to_be_bytes();
+    let data = data.as_slice();
+
+    host.store_write(path, data, 0)
+        .map_err(Error::from)
+        .map(|_| u32)
 }
 
 /// Stores a string at a given path
@@ -359,10 +369,10 @@ pub fn is_not_collected<R: Runtime>(host: &mut R, tweet_id: &u64) -> Result<()> 
 pub fn set_collected_block<R: Runtime>(
     host: &mut R,
     tweet_id: &u64,
-    previous_block: &str,
+    previous_block: &u32,
 ) -> Result<()> {
     let tweet_collected_block_path = tweet_collected_block_path(tweet_id)?;
-    let _ = store_string(host, &tweet_collected_block_path, &previous_block)?;
+    let _ = store_u32(host, &tweet_collected_block_path, &previous_block)?;
     Ok(())
 }
 

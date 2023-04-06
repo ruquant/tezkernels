@@ -32,7 +32,6 @@ pub enum Error {
     BigIntError,
     BinError(tezos_data_encoding::enc::BinError),
     EntrypointError(tezos_smart_rollup_encoding::entrypoint::EntrypointError),
-    NotInfoPerLevelMsg,
 }
 
 impl ToString for Error {
@@ -53,7 +52,6 @@ impl ToString for Error {
             Error::BigIntError => "Cannot deserialize big int",
             Error::BinError(_) => "Cannot serialize michelson to binary",
             Error::EntrypointError(_) => "Not a correct entrypoint",
-            Error::NotInfoPerLevelMsg => "Was waiting for the InfoPerLevel message",
         };
         err.to_string()
     }

@@ -30,7 +30,7 @@ rm -rf rollup
 
 # Copy the kernel in the rollup directory
 mkdir -p rollup
-cp kernel/target/wasm32-unknown-unknown/release/tzwitter_kernel.wasm ./rollup/kernel.wasm
+cp ../target/wasm32-unknown-unknown/release/tzwitter_kernel.wasm ./rollup/kernel.wasm
 
 # Installing the kernel
 wasm-strip ./rollup/kernel.wasm
@@ -45,7 +45,7 @@ mkdir -p rollup/wasm_2_0_0
 
 # Copy the kernel in the rollup directory
 mkdir -p rollup
-cp kernel/target/wasm32-unknown-unknown/release/tzwitter_kernel.wasm ./rollup/kernel.wasm
+cp ../target/wasm32-unknown-unknown/release/tzwitter_kernel.wasm ./rollup/kernel.wasm
 
 # Save the bytes of the kernel as a variable
 KERNEL_INSTALLER=$(cat rollup/installer.hex)

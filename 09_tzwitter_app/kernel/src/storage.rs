@@ -162,7 +162,9 @@ fn read_string<R: Runtime>(host: &mut R, path: &OwnedPath) -> Result<Option<Stri
         return Ok(None);
     }
 
-    let buffer = host.store_read(path, 0, usize::MAX).map_err(Error::from)?;
+    let size = host.store_value_size(path).map_err(Error::from)?;
+    let buffer = host.store_read(path, 0, size).map_err(Error::from)?;
+
     String::from_utf8(buffer)
         .map_err(Error::from)
         .map(|str| Some(str))

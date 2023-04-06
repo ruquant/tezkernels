@@ -63,4 +63,4 @@ octez-smart-rollup-node-alpha init operator config for "${SOR_ADDR}" with operat
 # # Print the function to run it
 echo Rollup Address: $SOR_ADDR
 echo Command to run to start your rollup:
-echo "octez-smart-rollup-node-alpha run --data-dir rollup"
+echo "octez-smart-rollup-node-alpha run operator for $SOR_ADDR with operators ${account_alias} --data-dir rollup"

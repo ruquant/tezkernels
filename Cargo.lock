@@ -620,6 +620,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "serde-json-wasm"
+version = "0.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a15bee9b04dd165c3f4e142628982ddde884c2022a89e8ddf99c4829bf2c3a58"
+dependencies = [
+ "serde",
+]
+
+[[package]]
 name = "serde_derive"
 version = "1.0.153"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -928,6 +937,26 @@ name = "typenum"
 version = "1.16.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "497961ef93d974e23eb6f433eb5fe1b7930b659f06d12dec6fc44a8f554c0bba"
+
+[[package]]
+name = "tzwitter-kernel"
+version = "0.1.0"
+dependencies = [
+ "ed25519-compact",
+ "hex",
+ "num-bigint",
+ "serde",
+ "serde-json-wasm",
+ "tezos_crypto_rs",
+ "tezos_data_encoding",
+ "tezos_smart_rollup_core",
+ "tezos_smart_rollup_debug",
+ "tezos_smart_rollup_encoding",
+ "tezos_smart_rollup_entrypoint",
+ "tezos_smart_rollup_host",
+ "tezos_smart_rollup_mock",
+ "tezos_smart_rollup_storage",
+]
 
 [[package]]
 name = "unicode-ident"

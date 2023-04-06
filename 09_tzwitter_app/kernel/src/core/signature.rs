@@ -1,8 +1,8 @@
 use crate::core::error::*;
 use crate::core::hash::Blake2b;
 use crate::core::public_key::PublicKey;
-use crypto::hash::Ed25519Signature;
 use serde::Deserialize;
+use tezos_crypto_rs::hash::Ed25519Signature;
 
 #[derive(Deserialize)]
 pub enum Signature {

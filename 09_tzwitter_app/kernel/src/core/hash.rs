@@ -14,7 +14,7 @@ macro_rules! define_blake2b {
 
         impl<'a> From<&'a [u8]> for $name {
             fn from(data: &'a [u8]) -> Self {
-                let digest = crypto::blake2b::digest(data, $size).unwrap();
+                let digest = tezos_crypto_rs::blake2b::digest(data, $size).unwrap();
                 Self {
                     inner: digest.try_into().unwrap(),
                 }

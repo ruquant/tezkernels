@@ -1,14 +1,10 @@
+use tezos_smart_rollup_host::path::*;
+use tezos_smart_rollup_host::runtime::Runtime;
+
 use crate::core::public_key_hash::PublicKeyHash;
 use crate::core::receipt::Receipt;
 use crate::core::tweet::Tweet;
 use crate::core::{account::Account, error::*, nonce::Nonce};
-use host::path::Path;
-use host::runtime::{load_value_sized, load_value_slice};
-use host::{
-    path::{concat, OwnedPath, RefPath},
-    rollup_core::RawRollupCore,
-    runtime::Runtime,
-};
 
 const ACCOUNTS: RefPath = RefPath::assert_from(b"/accounts");
 pub const TWEETS: RefPath = RefPath::assert_from(b"/tweets");
@@ -116,7 +112,7 @@ fn receipt_success_path(receipt: &Receipt) -> Result<OwnedPath> {
 }
 
 ///  Check if a path exists
-pub fn exists<Host: RawRollupCore + Runtime>(host: &mut Host, path: &impl Path) -> Result<bool> {
+pub fn exists<R: Runtime>(host: &mut R, path: &impl Path) -> Result<bool> {
     let exists = Runtime::store_has(host, path)?
         .map(|_| true)
         .unwrap_or_default();
@@ -125,28 +121,21 @@ pub fn exists<Host: RawRollupCore + Runtime>(host: &mut Host, path: &impl Path) 
 
 /// Read an u64 from a given path
 /// If the data does not exist, it returns the default value of an u64
-pub fn read_u64<Host: RawRollupCore + Runtime>(
-    host: &mut Host,
-    path: &impl Path,
-) -> Result<Option<u64>> {
+pub fn read_u64<R: Runtime>(host: &mut R, path: &impl Path) -> Result<Option<u64>> {
     let is_exists = exists(host, path)?;
     if !is_exists {
         return Ok(None);
     }
 
     let mut buffer = [0_u8; 8];
-    match load_value_slice(host, path, &mut buffer) {
+    match host.store_read_slice(path, 0, &mut buffer) {
         Ok(8) => Ok(Some(u64::from_be_bytes(buffer))),
         _ => Err(Error::StateDeserializarion),
     }
 }
 
 /// Store an u64 at a given path
-fn store_u64<'a, Host: RawRollupCore + Runtime>(
-    host: &mut Host,
-    path: &impl Path,
-    u64: &'a u64,
-) -> Result<&'a u64> {
+fn store_u64<'a, R: Runtime>(host: &mut R, path: &impl Path, u64: &'a u64) -> Result<&'a u64> {
     let data = u64.to_be_bytes();
     let data = data.as_slice();
 
@@ -156,11 +145,7 @@ fn store_u64<'a, Host: RawRollupCore + Runtime>(
 }
 
 /// Stores a string at a given path
-fn store_string<'a, Host: RawRollupCore + Runtime, T>(
-    host: &mut Host,
-    path: &OwnedPath,
-    data: &'a T,
-) -> Result<&'a T>
+fn store_string<'a, R: Runtime, T>(host: &mut R, path: &OwnedPath, data: &'a T) -> Result<&'a T>
 where
     T: ToString,
 {
@@ -171,23 +156,20 @@ where
         .map(|_| data)
 }
 
-fn read_string<Host: RawRollupCore + Runtime>(
-    host: &mut Host,
-    path: &OwnedPath,
-) -> Result<Option<String>> {
+fn read_string<R: Runtime>(host: &mut R, path: &OwnedPath) -> Result<Option<String>> {
     let is_exists = exists(host, path)?;
     if !is_exists {
         return Ok(None);
     }
 
-    let buffer = load_value_sized(host, path).map_err(Error::from)?;
+    let buffer = host.store_read(path, 0, usize::MAX).map_err(Error::from)?;
     String::from_utf8(buffer)
         .map_err(Error::from)
         .map(|str| Some(str))
 }
 
 /// Creates a flag at the given path
-fn store_flag<Host: RawRollupCore + Runtime>(host: &mut Host, path: &impl Path) -> Result<()> {
+fn store_flag<R: Runtime>(host: &mut R, path: &impl Path) -> Result<()> {
     let data = [0x00].as_slice();
     host.store_write(path, data, 0)
         .map_err(Error::from)
@@ -195,11 +177,7 @@ fn store_flag<Host: RawRollupCore + Runtime>(host: &mut Host, path: &impl Path) 
 }
 
 /// Stores a boolean at a given path
-fn store_bool<Host: RawRollupCore + Runtime>(
-    host: &mut Host,
-    path: &impl Path,
-    bool: bool,
-) -> Result<()> {
+fn store_bool<R: Runtime>(host: &mut R, path: &impl Path, bool: bool) -> Result<()> {
     let data = match bool {
         true => [0x01],
         false => [0x00],
@@ -211,10 +189,7 @@ fn store_bool<Host: RawRollupCore + Runtime>(
 }
 
 /// Read the account of the user
-pub fn read_account<Host: RawRollupCore + Runtime>(
-    host: &mut Host,
-    public_key_hash: PublicKeyHash,
-) -> Result<Account> {
+pub fn read_account<R: Runtime>(host: &mut R, public_key_hash: PublicKeyHash) -> Result<Account> {
     let nonce_path = nonce_path(&public_key_hash)?;
     let nonce = read_u64(host, &nonce_path)?.unwrap_or_default();
     Ok(Account {
@@ -226,10 +201,7 @@ pub fn read_account<Host: RawRollupCore + Runtime>(
 /// Store an account to the location /account/{tz...}
 ///
 /// Only the nonce is stored
-pub fn store_account<'a, Host: RawRollupCore + Runtime>(
-    host: &mut Host,
-    account: &'a Account,
-) -> Result<&'a Account> {
+pub fn store_account<'a, R: Runtime>(host: &mut R, account: &'a Account) -> Result<&'a Account> {
     let Account {
         nonce,
         public_key_hash,
@@ -240,8 +212,8 @@ pub fn store_account<'a, Host: RawRollupCore + Runtime>(
 }
 
 /// Store a tweet to the location /tweets/{tz...}
-pub fn store_tweet<'a, Host: RawRollupCore + Runtime>(
-    host: &mut Host,
+pub fn store_tweet<'a, R: Runtime>(
+    host: &mut R,
     tweet_id: &u64,
     tweet: &'a Tweet,
 ) -> Result<&'a Tweet> {
@@ -262,7 +234,7 @@ pub fn store_tweet<'a, Host: RawRollupCore + Runtime>(
 }
 
 /// Increment the tweet counter and return the previous one.
-pub fn increment_tweet_counter<Host: RawRollupCore + Runtime>(host: &mut Host) -> Result<u64> {
+pub fn increment_tweet_counter<R: Runtime>(host: &mut R) -> Result<u64> {
     let previous_counter = read_u64(host, &TWEET_COUNTER)?.unwrap_or_default();
     let next_counter = previous_counter + 1;
     let _ = store_u64(host, &TWEET_COUNTER, &next_counter)?;
@@ -272,10 +244,7 @@ pub fn increment_tweet_counter<Host: RawRollupCore + Runtime>(host: &mut Host) -
 /// Read a tweet from the durable state
 ///
 /// If the tweet is not present an Option is return
-pub fn read_tweet<Host: RawRollupCore + Runtime>(
-    host: &mut Host,
-    tweet_id: &u64,
-) -> Result<Option<Tweet>> {
+pub fn read_tweet<R: Runtime>(host: &mut R, tweet_id: &u64) -> Result<Option<Tweet>> {
     let author_path = tweet_author_path(tweet_id)?;
     let content_path = tweet_content_path(tweet_id)?;
     let likes_path = tweet_likes_path(tweet_id)?;
@@ -299,8 +268,8 @@ pub fn read_tweet<Host: RawRollupCore + Runtime>(
 }
 
 /// Create a flag in the user account that indicates that the user has liked the given tweet
-pub fn set_like_flag<Host: RawRollupCore + Runtime>(
-    host: &mut Host,
+pub fn set_like_flag<R: Runtime>(
+    host: &mut R,
     public_key_hash: &PublicKeyHash,
     tweet_id: &u64,
 ) -> Result<()> {
@@ -309,8 +278,8 @@ pub fn set_like_flag<Host: RawRollupCore + Runtime>(
 }
 
 /// Check if the user has a like a tweet
-pub fn is_liked<Host: RawRollupCore + Runtime>(
-    host: &mut Host,
+pub fn is_liked<R: Runtime>(
+    host: &mut R,
     public_key_hash: &PublicKeyHash,
     tweet_id: &u64,
 ) -> Result<bool> {
@@ -319,8 +288,8 @@ pub fn is_liked<Host: RawRollupCore + Runtime>(
 }
 
 /// Add a tweet in the "written" path of an account
-pub fn add_written_tweet_to_account<Host: RawRollupCore + Runtime>(
-    host: &mut Host,
+pub fn add_written_tweet_to_account<R: Runtime>(
+    host: &mut R,
     public_key_hash: &PublicKeyHash,
     tweet_id: &u64,
 ) -> Result<()> {
@@ -329,8 +298,8 @@ pub fn add_written_tweet_to_account<Host: RawRollupCore + Runtime>(
 }
 
 /// Add a tweet in the "owned" path of an account
-pub fn add_owned_tweet_to_account<Host: RawRollupCore + Runtime>(
-    host: &mut Host,
+pub fn add_owned_tweet_to_account<R: Runtime>(
+    host: &mut R,
     public_key_hash: &PublicKeyHash,
     tweet_id: &u64,
 ) -> Result<()> {
@@ -339,8 +308,8 @@ pub fn add_owned_tweet_to_account<Host: RawRollupCore + Runtime>(
 }
 
 /// Checks if the user is owner of the tweet
-pub fn is_owner<Host: RawRollupCore + Runtime>(
-    host: &mut Host,
+pub fn is_owner<R: Runtime>(
+    host: &mut R,
     public_key_hash: &PublicKeyHash,
     tweet_id: &u64,
 ) -> Result<()> {
@@ -355,8 +324,8 @@ pub fn is_owner<Host: RawRollupCore + Runtime>(
 
 /// Transfer a tweet from a user to another one
 /// Does not check if the user owns the tweet
-pub fn transfer<Host: RawRollupCore + Runtime>(
-    host: &mut Host,
+pub fn transfer<R: Runtime>(
+    host: &mut R,
     public_key_hash: &PublicKeyHash,
     tweet_id: &u64,
     destination: &PublicKeyHash,
@@ -367,10 +336,7 @@ pub fn transfer<Host: RawRollupCore + Runtime>(
 }
 
 // Stores a receipt under /receipt/{hash}
-pub fn store_receipt<'a, Host: RawRollupCore + Runtime>(
-    host: &mut Host,
-    receipt: &'a Receipt,
-) -> Result<&'a Receipt> {
+pub fn store_receipt<'a, R: Runtime>(host: &mut R, receipt: &'a Receipt) -> Result<&'a Receipt> {
     let success_path = receipt_success_path(receipt)?;
 
     let () = store_bool(host, &success_path, receipt.success())?;
@@ -379,10 +345,7 @@ pub fn store_receipt<'a, Host: RawRollupCore + Runtime>(
 }
 
 /// Returns Ok if the tweet is not collected
-pub fn is_not_collected<Host: RawRollupCore + Runtime>(
-    host: &mut Host,
-    tweet_id: &u64,
-) -> Result<()> {
+pub fn is_not_collected<R: Runtime>(host: &mut R, tweet_id: &u64) -> Result<()> {
     let tweet_collected_block_path = tweet_collected_block_path(tweet_id)?;
     let is_present = exists(host, &tweet_collected_block_path)?;
 
@@ -393,8 +356,8 @@ pub fn is_not_collected<Host: RawRollupCore + Runtime>(
 }
 
 /// Set the block when the tweet has been collected
-pub fn set_collected_block<Host: RawRollupCore + Runtime>(
-    host: &mut Host,
+pub fn set_collected_block<R: Runtime>(
+    host: &mut R,
     tweet_id: &u64,
     previous_block: &str,
 ) -> Result<()> {
@@ -404,8 +367,8 @@ pub fn set_collected_block<Host: RawRollupCore + Runtime>(
 }
 
 /// Indicates that a tweet is beeing collected by the given user
-pub fn add_collecting_tweet_to_account<Host: RawRollupCore + Runtime>(
-    host: &mut Host,
+pub fn add_collecting_tweet_to_account<R: Runtime>(
+    host: &mut R,
     public_key_hash: &PublicKeyHash,
     tweet_id: &u64,
 ) -> Result<()> {

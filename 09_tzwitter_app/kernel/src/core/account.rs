@@ -1,5 +1,4 @@
 use crate::core::nonce::Nonce;
-use serde::Serialize;
 
 use super::public_key_hash::PublicKeyHash;
 

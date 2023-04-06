@@ -10,7 +10,7 @@ pub enum ReadInputError {
     /// There is an error in the string to Message deserialization
     SerdeJson(serde_json_wasm::de::Error),
     /// There is an error runtime
-    Runtime(host::runtime::RuntimeError),
+    Runtime(tezos_smart_rollup_host::runtime::RuntimeError),
 }
 
 /// Represents all the error of the kernel
@@ -18,11 +18,11 @@ pub enum ReadInputError {
 #[derive(Debug)]
 pub enum Error {
     FromUtf8Error(std::string::FromUtf8Error),
-    Runtime(host::runtime::RuntimeError),
+    Runtime(tezos_smart_rollup_host::runtime::RuntimeError),
     Ed25519Compact(ed25519_compact::Error),
     InvalidSignature,
     InvalidNonce,
-    PathError(host::path::PathError),
+    PathError(tezos_smart_rollup_host::path::PathError),
     StateDeserializarion,
     TweetNotFound,
     TweetAlreadyLiked,
@@ -31,7 +31,7 @@ pub enum Error {
     FromBase58CheckError,
     BigIntError,
     BinError(tezos_data_encoding::enc::BinError),
-    EntrypointError(tezos_rollup_encoding::entrypoint::EntrypointError),
+    EntrypointError(tezos_smart_rollup_encoding::entrypoint::EntrypointError),
     NotInfoPerLevelMsg,
 }
 
@@ -71,12 +71,12 @@ macro_rules! register_error {
 
 register_error!(FromUtf8Error, std::string::FromUtf8Error);
 register_error!(Ed25519Compact, ed25519_compact::Error);
-register_error!(PathError, host::path::PathError);
-register_error!(Runtime, host::runtime::RuntimeError);
+register_error!(PathError, tezos_smart_rollup_host::path::PathError);
+register_error!(Runtime, tezos_smart_rollup_host::runtime::RuntimeError);
 register_error!(BinError, tezos_data_encoding::enc::BinError);
 register_error!(
     EntrypointError,
-    tezos_rollup_encoding::entrypoint::EntrypointError
+    tezos_smart_rollup_encoding::entrypoint::EntrypointError
 );
 
 pub type Result<A> = std::result::Result<A, Error>;

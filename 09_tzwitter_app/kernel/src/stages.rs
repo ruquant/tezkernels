@@ -12,27 +12,28 @@ use crate::{
         is_owner, read_tweet, set_collected_block, set_like_flag, store_tweet,
     },
 };
-use host::{
-    rollup_core::{RawRollupCore, MAX_INPUT_MESSAGE_SIZE},
-    runtime::Runtime,
-};
+
 use num_bigint::ToBigInt;
 use tezos_data_encoding::{enc::BinWriter, types::Zarith};
+use tezos_smart_rollup_encoding::{
+    contract::Contract,
+    entrypoint::Entrypoint,
+    inbox::InboxMessage,
+    michelson::{MichelsonContract, MichelsonInt, MichelsonPair, MichelsonString, MichelsonUnit},
+    outbox::{OutboxMessage, OutboxMessageTransaction, OutboxMessageTransactionBatch},
+};
+use tezos_smart_rollup_host::runtime::Runtime;
 
 use crate::core::error::*;
 use crate::core::message::Message;
-use tezos_rollup_encoding::{contract::Contract, inbox::InboxMessage, michelson::*};
-use tezos_rollup_encoding::{entrypoint::Entrypoint, outbox::*};
 
 /// Read a message from the inbox
 ///
 /// It will only read messages External Messages with the MAGIC_BYTE
 /// Benchmark: 2_000_000 ticks (processing an inbox with only one message)
-pub fn read_input<Host: RawRollupCore>(
-    host: &mut Host,
-) -> std::result::Result<Message, ReadInputError> {
+pub fn read_input<R: Runtime>(host: &mut R) -> std::result::Result<Message, ReadInputError> {
     let input = host
-        .read_input(MAX_INPUT_MESSAGE_SIZE)
+        .read_input()
         .map_err(|err| ReadInputError::Runtime(err))?;
     match input {
         None => Err(ReadInputError::EndOfInbox),
@@ -56,16 +57,12 @@ pub fn read_input<Host: RawRollupCore>(
 /// Because it will read the first 2 messages of the inbox
 /// TODO: how to have the current level of the block?
 /// It should be better if this function returns the current level of the block
-pub fn get_previous_block_hash<Host: RawRollupCore + Runtime>(host: &mut Host) -> Result<String> {
+pub fn get_previous_block_hash<R: Runtime>(host: &mut R) -> Result<String> {
     // It ignores the StartOfLevel
-    let _ = host
-        .read_input(MAX_INPUT_MESSAGE_SIZE)
-        .map_err(|err| Error::Runtime(err))?;
+    let _ = host.read_input().map_err(|err| Error::Runtime(err))?;
 
     // It reads the InfoPerLevel
-    let input = host
-        .read_input(MAX_INPUT_MESSAGE_SIZE)
-        .map_err(|err| Error::Runtime(err))?;
+    let input = host.read_input().map_err(|err| Error::Runtime(err))?;
 
     // And then extract the precessor hash as a string (which not the best type)
 
@@ -78,7 +75,7 @@ pub fn get_previous_block_hash<Host: RawRollupCore + Runtime>(host: &mut Host) -
     match msg {
         InboxMessage::External(_) => Err(Error::NotInfoPerLevelMsg),
         InboxMessage::Internal(msg) => match msg {
-            tezos_rollup_encoding::inbox::InternalInboxMessage::InfoPerLevel(info) => {
+            tezos_smart_rollup_encoding::inbox::InternalInboxMessage::InfoPerLevel(info) => {
                 Ok(info.predecessor.to_base58_check())
             }
             _ => Err(Error::NotInfoPerLevelMsg),
@@ -117,8 +114,8 @@ pub fn verify_nonce(inner: Inner, nonce: &Nonce) -> Result<Content> {
 /// Create a new tweet from the PostTweet request
 /// Save the tweet to the durable state
 /// And add a tweet entry to the user account
-pub fn create_tweet<Host: RawRollupCore + Runtime>(
-    host: &mut Host,
+pub fn create_tweet<R: Runtime>(
+    host: &mut R,
     account: &Account,
     post_tweet: PostTweet,
 ) -> Result<()> {
@@ -130,11 +127,7 @@ pub fn create_tweet<Host: RawRollupCore + Runtime>(
     Ok(())
 }
 
-pub fn like_tweet<Host: RawRollupCore + Runtime>(
-    host: &mut Host,
-    account: &Account,
-    tweet_id: &u64,
-) -> Result<()> {
+pub fn like_tweet<R: Runtime>(host: &mut R, account: &Account, tweet_id: &u64) -> Result<()> {
     let already_liked = is_liked(host, &account.public_key_hash, tweet_id)?;
     match already_liked {
         true => Err(Error::TweetAlreadyLiked),
@@ -156,8 +149,8 @@ pub fn like_tweet<Host: RawRollupCore + Runtime>(
 /// Transfer a tweet from an account to another one
 ///
 /// Checks if the account parameter is owner of the tweet
-pub fn transfer_tweet<Host: RawRollupCore + Runtime>(
-    host: &mut Host,
+pub fn transfer_tweet<R: Runtime>(
+    host: &mut R,
     account: &Account,
     transfer: &Transfer,
 ) -> Result<()> {
@@ -171,8 +164,8 @@ pub fn transfer_tweet<Host: RawRollupCore + Runtime>(
 }
 
 /// Withdraw the tweet to layer 1
-pub fn withdraw_tweet<Host: RawRollupCore + Runtime>(
-    host: &mut Host,
+pub fn withdraw_tweet<R: Runtime>(
+    host: &mut R,
     previous_hash: &str,
     account: &Account,
     tweet_id: &u64,

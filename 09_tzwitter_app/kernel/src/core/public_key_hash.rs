@@ -1,5 +1,5 @@
-use crypto::hash::ContractTz1Hash;
 use serde::{Deserialize, Serialize};
+use tezos_crypto_rs::hash::ContractTz1Hash;
 
 use crate::core::public_key::PublicKey;
 

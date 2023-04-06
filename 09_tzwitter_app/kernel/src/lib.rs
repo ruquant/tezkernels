@@ -39,11 +39,11 @@ fn step<R: Runtime>(host: &mut R, message: Message, previous_hash: &str) -> Resu
     let _ = store_account(host, &account)?;
 
     // Interpret the message
-    let () = match content {
+    match content {
         Content::PostTweet(post_tweet) => create_tweet(host, &account, post_tweet)?,
         Content::LikeTweet(tweet_id) => like_tweet(host, &account, &tweet_id)?,
         Content::Transfer(transfer) => transfer_tweet(host, &account, &transfer)?,
-        Content::Collect(twwet_id) => withdraw_tweet(host, &previous_hash, &account, &twwet_id)?,
+        Content::Collect(twwet_id) => withdraw_tweet(host, previous_hash, &account, &twwet_id)?,
     };
 
     Ok(())

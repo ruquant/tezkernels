@@ -10,20 +10,6 @@ pub enum Signature {
 }
 
 impl Signature {
-    pub fn to_b58(&self) -> String {
-        match self {
-            Signature::Ed25519(sig) => sig.to_base58_check(),
-        }
-    }
-
-    pub fn from_b58(data: &str) -> std::result::Result<Self, &'static str> {
-        let ed25519 = Ed25519Signature::from_base58_check(data).ok();
-        match ed25519 {
-            Some(pkey) => Ok(Signature::Ed25519(pkey)),
-            None => Err("Cannot decode b58"),
-        }
-    }
-
     pub fn verify(&self, public_key: &PublicKey, message: &[u8]) -> Result<()> {
         match (self, public_key) {
             (Signature::Ed25519(sig), PublicKey::Ed25519(pkey)) => {
@@ -45,8 +31,26 @@ impl Signature {
 
 #[cfg(test)]
 mod tests {
+    use tezos_crypto_rs::hash::Ed25519Signature;
+
     use super::Signature;
     use crate::core::public_key::PublicKey;
+
+    impl Signature {
+        pub fn to_b58(&self) -> String {
+            match self {
+                Signature::Ed25519(sig) => sig.to_base58_check(),
+            }
+        }
+
+        pub fn from_b58(data: &str) -> std::result::Result<Self, &'static str> {
+            let ed25519 = Ed25519Signature::from_base58_check(data).ok();
+            match ed25519 {
+                Some(pkey) => Ok(Signature::Ed25519(pkey)),
+                None => Err("Cannot decode b58"),
+            }
+        }
+    }
 
     #[test]
     fn test_ed25519_signature_deserialization() {

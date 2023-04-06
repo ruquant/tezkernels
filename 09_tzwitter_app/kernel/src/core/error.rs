@@ -17,7 +17,7 @@ pub enum ReadInputError {
 ///
 #[derive(Debug)]
 pub enum Error {
-    FromUtf8Error(std::string::FromUtf8Error),
+    FromUtf8(std::string::FromUtf8Error),
     Runtime(tezos_smart_rollup_host::runtime::RuntimeError),
     Ed25519Compact(ed25519_compact::Error),
     InvalidSignature,
@@ -38,7 +38,7 @@ pub enum Error {
 impl ToString for Error {
     fn to_string(&self) -> String {
         let err = match self {
-            Error::FromUtf8Error(_) => "Cannot convert bytes to string",
+            Error::FromUtf8(_) => "Cannot convert bytes to string",
             Error::Runtime(_) => "Runtime error, caused by host function",
             Error::Ed25519Compact(_) => "Cannot deserialize Ed25519",
             Error::InvalidSignature => "Invalid signature",
@@ -69,7 +69,7 @@ macro_rules! register_error {
     };
 }
 
-register_error!(FromUtf8Error, std::string::FromUtf8Error);
+register_error!(FromUtf8, std::string::FromUtf8Error);
 register_error!(Ed25519Compact, ed25519_compact::Error);
 register_error!(PathError, tezos_smart_rollup_host::path::PathError);
 register_error!(Runtime, tezos_smart_rollup_host::runtime::RuntimeError);

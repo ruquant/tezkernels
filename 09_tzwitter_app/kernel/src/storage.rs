@@ -165,9 +165,7 @@ fn read_string<R: Runtime>(host: &mut R, path: &OwnedPath) -> Result<Option<Stri
     let size = host.store_value_size(path).map_err(Error::from)?;
     let buffer = host.store_read(path, 0, size).map_err(Error::from)?;
 
-    String::from_utf8(buffer)
-        .map_err(Error::from)
-        .map(|str| Some(str))
+    String::from_utf8(buffer).map_err(Error::from).map(Some)
 }
 
 /// Creates a flag at the given path
@@ -341,7 +339,7 @@ pub fn transfer<R: Runtime>(
 pub fn store_receipt<'a, R: Runtime>(host: &mut R, receipt: &'a Receipt) -> Result<&'a Receipt> {
     let success_path = receipt_success_path(receipt)?;
 
-    let () = store_bool(host, &success_path, receipt.success())?;
+    store_bool(host, &success_path, receipt.success())?;
 
     Ok(receipt)
 }

@@ -6,25 +6,26 @@ pub enum PublicKey {
     Ed25519(PublicKeyEd25519),
 }
 
-impl PublicKey {
-    pub fn to_b58(&self) -> String {
-        match self {
-            PublicKey::Ed25519(pk) => pk.to_base58_check(),
-        }
-    }
-
-    pub fn from_b58(data: &str) -> Result<Self, &'static str> {
-        let ed25519 = PublicKeyEd25519::from_base58_check(data).ok();
-        match ed25519 {
-            Some(pkey) => Ok(PublicKey::Ed25519(pkey)),
-            None => Err("Cannot decode b58"),
-        }
-    }
-}
-
 #[cfg(test)]
 mod tests {
+    use tezos_crypto_rs::hash::PublicKeyEd25519;
+
     use super::PublicKey;
+    impl PublicKey {
+        pub fn to_b58(&self) -> String {
+            match self {
+                PublicKey::Ed25519(pk) => pk.to_base58_check(),
+            }
+        }
+
+        pub fn from_b58(data: &str) -> Result<Self, &'static str> {
+            let ed25519 = PublicKeyEd25519::from_base58_check(data).ok();
+            match ed25519 {
+                Some(pkey) => Ok(PublicKey::Ed25519(pkey)),
+                None => Err("Cannot decode b58"),
+            }
+        }
+    }
 
     #[test]
     fn test_ed25519_pk_deserialization() {

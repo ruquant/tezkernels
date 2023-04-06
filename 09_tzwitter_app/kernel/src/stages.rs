@@ -32,9 +32,7 @@ use crate::core::message::Message;
 /// It will only read messages External Messages with the MAGIC_BYTE
 /// Benchmark: 2_000_000 ticks (processing an inbox with only one message)
 pub fn read_input<R: Runtime>(host: &mut R) -> std::result::Result<Message, ReadInputError> {
-    let input = host
-        .read_input()
-        .map_err(|err| ReadInputError::Runtime(err))?;
+    let input = host.read_input().map_err(ReadInputError::Runtime)?;
     match input {
         None => Err(ReadInputError::EndOfInbox),
         Some(message) => {
@@ -42,9 +40,8 @@ pub fn read_input<R: Runtime>(host: &mut R) -> std::result::Result<Message, Read
             match data {
                 [0x01, MAGIC_BYTE, ..] => {
                     let bytes = data.iter().skip(2).copied().collect();
-                    let str = String::from_utf8(bytes)
-                        .map_err(|err| ReadInputError::FromUtf8Error(err))?;
-                    serde_json_wasm::from_str(&str).map_err(|err| ReadInputError::SerdeJson(err))
+                    let str = String::from_utf8(bytes).map_err(ReadInputError::FromUtf8Error)?;
+                    serde_json_wasm::from_str(&str).map_err(ReadInputError::SerdeJson)
                 }
                 _ => Err(ReadInputError::NotATzwitterMessage),
             }
@@ -59,10 +56,10 @@ pub fn read_input<R: Runtime>(host: &mut R) -> std::result::Result<Message, Read
 /// It should be better if this function returns the current level of the block
 pub fn get_previous_block_hash<R: Runtime>(host: &mut R) -> Result<String> {
     // It ignores the StartOfLevel
-    let _ = host.read_input().map_err(|err| Error::Runtime(err))?;
+    let _ = host.read_input().map_err(Error::Runtime)?;
 
     // It reads the InfoPerLevel
-    let input = host.read_input().map_err(|err| Error::Runtime(err))?;
+    let input = host.read_input().map_err(Error::Runtime)?;
 
     // And then extract the precessor hash as a string (which not the best type)
 
@@ -92,7 +89,7 @@ pub fn verify_signature(message: Message) -> Result<Inner> {
     let inner = message.inner();
     let hash = inner.hash();
 
-    let () = signature.verify(&pkey, hash.as_ref())?;
+    signature.verify(pkey, hash.as_ref())?;
     let Message { inner, .. } = message;
     Ok(inner)
 }
@@ -122,8 +119,8 @@ pub fn create_tweet<R: Runtime>(
     let id = increment_tweet_counter(host)?;
     let tweet = Tweet::from(post_tweet);
     let _ = store_tweet(host, &id, &tweet)?;
-    let _ = add_owned_tweet_to_account(host, &account.public_key_hash, &id)?;
-    let _ = add_written_tweet_to_account(host, &account.public_key_hash, &id)?;
+    add_owned_tweet_to_account(host, &account.public_key_hash, &id)?;
+    add_written_tweet_to_account(host, &account.public_key_hash, &id)?;
     Ok(())
 }
 
@@ -138,7 +135,7 @@ pub fn like_tweet<R: Runtime>(host: &mut R, account: &Account, tweet_id: &u64) -
                 Some(tweet) => {
                     let tweet = tweet.like();
                     store_tweet(host, tweet_id, &tweet)?;
-                    let _ = set_like_flag(host, &account.public_key_hash, &tweet_id)?;
+                    set_like_flag(host, &account.public_key_hash, tweet_id)?;
                     Ok(())
                 }
             }
@@ -158,8 +155,8 @@ pub fn transfer_tweet<R: Runtime>(
         tweet_id,
         destination,
     } = transfer;
-    let () = is_owner(host, &account.public_key_hash, tweet_id)?;
-    let () = storage::transfer(host, &account.public_key_hash, tweet_id, destination)?;
+    is_owner(host, &account.public_key_hash, tweet_id)?;
+    storage::transfer(host, &account.public_key_hash, tweet_id, destination)?;
     Ok(())
 }
 
@@ -170,8 +167,8 @@ pub fn withdraw_tweet<R: Runtime>(
     account: &Account,
     tweet_id: &u64,
 ) -> Result<()> {
-    let () = is_owner(host, &account.public_key_hash, tweet_id)?;
-    let () = is_not_collected(host, tweet_id)?;
+    is_owner(host, &account.public_key_hash, tweet_id)?;
+    is_not_collected(host, tweet_id)?;
 
     let tweet = read_tweet(host, tweet_id)
         .map_err(Error::from)?
@@ -223,13 +220,13 @@ pub fn withdraw_tweet<R: Runtime>(
     let message = OutboxMessage::AtomicTransactionBatch(batch);
 
     let mut output = Vec::default();
-    let () = message.bin_write(&mut output).unwrap();
+    message.bin_write(&mut output).unwrap();
 
-    let () = host.write_output(&output).unwrap();
+    host.write_output(&output).unwrap();
 
     // Freeze the tweets
-    let () = set_collected_block(host, tweet_id, previous_hash)?;
+    set_collected_block(host, tweet_id, previous_hash)?;
     // Indicates that the user is collecting the tweet
-    let () = add_collecting_tweet_to_account(host, &account.public_key_hash, tweet_id)?;
+    add_collecting_tweet_to_account(host, &account.public_key_hash, tweet_id)?;
     Ok(())
 }
